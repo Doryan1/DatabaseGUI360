@@ -1,0 +1,140 @@
+import java.io.* ; 
+import java.awt.event.* ;  
+import javax.sound.sampled.* ;
+import javax.swing.* ;
+import java.util.* ;
+import java.awt.Color;
+
+//initial code from final project from another class
+//hi
+public class admin implements ActionListener{
+	private static JLabel Userlabel;
+	private static JLabel intro ; 
+	public static JTextField userText;
+	public static JButton LogInbutton;
+	
+	static int LogSuccess;
+	private JTabbedPane tabbedPane;
+	private JPanel adminprofpanel;
+	private JPanel admintapanel;
+	private JPanel adminstudentpanel;
+	private JPanel adminstaffpanel;
+	private JLabel lblNewLabel;
+	private JLabel lblThisIsFor_2;
+	private JLabel lblThisIsFor_1;
+	private JLabel lblThisIsFor;
+	private JLabel lblNewLabel_1;
+	private JButton exit5;
+	private JButton returnbtn;
+	private JButton re5;
+	/**
+	 * @wbp.parser.entryPoint
+	 */
+	public void ad() {
+		JFrame frame = new JFrame("Admin Manager") ; 
+		JPanel panel = new JPanel();
+		panel.setBackground(new Color(0, 0, 0));
+    	frame.setSize(900,602);
+    	frame.setLocationRelativeTo(null);
+    	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    	frame.getContentPane().add(panel);
+    	panel.setLayout(null);
+    	
+    	tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+    	tabbedPane.setBounds(0, 22, 884, 539);
+    	panel.add(tabbedPane);
+    	
+    	adminprofpanel = new JPanel();
+    	adminprofpanel.setBackground(new Color(255, 255, 255));
+    	tabbedPane.addTab("Professor Manager", null, adminprofpanel, null);
+    	adminprofpanel.setLayout(null);
+    	
+    	lblNewLabel = new JLabel("This is for professors");
+    	lblNewLabel.setBounds(113, 88, 198, 14);
+    	adminprofpanel.add(lblNewLabel);
+    	
+    	JButton exit1 = new JButton("EXIT");
+    	exit1.addActionListener(new ActionListener() {
+    		public void actionPerformed(ActionEvent e) {
+    		}
+    	});
+    	exit1.setBounds(790, 488, 89, 23);
+    	adminprofpanel.add(exit1);
+    	exit1.addActionListener(new exit());
+    	
+    	
+    	
+    	//---------------------------------------------------
+    	admintapanel = new JPanel();
+    	admintapanel.setBackground(new Color(255, 250, 250));
+    	tabbedPane.addTab("TA Manager", null, admintapanel, null);
+    	admintapanel.setLayout(null);
+    	
+    	lblThisIsFor_2 = new JLabel("This is for TA");
+    	lblThisIsFor_2.setBounds(73, 81, 198, 14);
+    	admintapanel.add(lblThisIsFor_2);
+    	
+    	JButton exit2 = new JButton("EXIT");
+    	exit2.setBounds(790, 488, 89, 23);
+    	admintapanel.add(exit2);
+    	exit2.addActionListener(new exit());
+    	
+    	JPanel adminadminpanel = new JPanel();
+    	tabbedPane.addTab("Admin Manager", null, adminadminpanel, null);
+    	adminadminpanel.setLayout(null);
+    	
+    	lblNewLabel_1 = new JLabel("This is for admin");
+    	lblNewLabel_1.setBounds(69, 268, 193, 32);
+    	adminadminpanel.add(lblNewLabel_1);
+    	
+    	exit5 = new JButton("EXIT");
+    	exit5.setBounds(790, 488, 89, 23);
+    	adminadminpanel.add(exit5);
+    	exit5.addActionListener(new exit());
+    	//-------------------------------------------------------
+    	adminstudentpanel = new JPanel();
+    	adminstudentpanel.setBackground(new Color(240, 255, 255));
+    	tabbedPane.addTab("Student Manager", null, adminstudentpanel, null);
+    	adminstudentpanel.setLayout(null);
+    	
+    	lblThisIsFor_1 = new JLabel("This is for student");
+    	lblThisIsFor_1.setBounds(75, 96, 198, 14);
+    	adminstudentpanel.add(lblThisIsFor_1);
+    	
+    	JButton exit3 = new JButton("EXIT");
+    	exit3.setBounds(790, 488, 89, 23);
+    	adminstudentpanel.add(exit3);
+    	exit3.addActionListener(new exit());
+    	//--------------------------------------------------------
+    	adminstaffpanel = new JPanel();
+    	adminstaffpanel.setBackground(new Color(250, 250, 210));
+    	tabbedPane.addTab("Staff Manager", null, adminstaffpanel, null);
+    	adminstaffpanel.setLayout(null);
+    	
+    	lblThisIsFor = new JLabel("This is for staff");
+    	lblThisIsFor.setBounds(55, 116, 198, 14);
+    	adminstaffpanel.add(lblThisIsFor);
+    	
+    	JButton exit4 = new JButton("EXIT");
+    	exit4.setBounds(790, 488, 89, 23);
+    	adminstaffpanel.add(exit4);
+    	exit4.addActionListener(new exit());
+    	
+    	JButton re5 = new JButton("return");
+    	re5.setBounds(790, 460, 89, 23);
+    	adminstaffpanel.add(re5);
+    	frame.setVisible(true);
+    	re5.addActionListener(new refresh());
+    	System.exit(0) ;
+    	
+    	
+    	
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+}
