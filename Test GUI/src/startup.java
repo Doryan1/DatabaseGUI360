@@ -1,4 +1,5 @@
-import java.awt.event.* ;  
+import java.awt.event.* ;
+import java.sql.SQLException;
 import javax.swing.* ;
 
 //initial code from final project from another class
@@ -11,12 +12,13 @@ public class startup implements ActionListener{
 	public static JButton Exit ; 
 	private static JLabel LogTrue;
 	static int LogSuccess;
+
+	private static Database db;
 	
 	public static void main(String[] args) throws Exception{
 
 		//this is a push to test github
-		@SuppressWarnings("unused")
-//		final var db = new Database("project.db");
+		db = new Database("project.db");
 		
 		
 		JFrame frame = new JFrame("startup") ; 
@@ -65,16 +67,37 @@ public class startup implements ActionListener{
 		// TODO Auto-generated method stub
 		String user = userText.getText() ; 
 		
-		if(user.equals("admin")) {
-			admin a = new admin() ;
-			a.ad() ; 
+		try {
+			final boolean[] flags = this.db.checkLogin(Integer.parseInt(user));
+			final boolean accountExists = flags[0];
+			final boolean isStudent = flags[1];
+			final boolean isEmployee = flags[2];
+			final boolean isTeacher = flags[3];
+			final boolean isTA = flags[4];
+			final boolean isAdmin = flags[5];
+
+			if(isAdmin) {
+				admin a = new admin() ;
+				a.ad();
+			} else if(!accountExists) {
+				//will tell the user to try again
+				LogTrue.setText("ID NOT Recognized, Please Try Again");
+			}
+		} catch(SQLException ex) {
+			System.out.println(ex);
 		}
+
+
+		// if(user.equals("admin")) {
+		// 	admin a = new admin() ;
+		// 	a.ad() ; 
+		// }
 		
-		else {
-			//will tell the user to try again
-			LogTrue.setText("ID NOT Recognized, Please Try Again");
+		// else {
+		// 	//will tell the user to try again
+		// 	LogTrue.setText("ID NOT Recognized, Please Try Again");
 			
-		}
+		// }
 		
 	}
 	
