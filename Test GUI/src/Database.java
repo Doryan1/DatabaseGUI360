@@ -187,7 +187,7 @@ public class Database
 	{
 		this.selectPerson.setInt(1, id);
 		final var getPersonRes = this.selectPerson.executeQuery();
-		if(getPersonRes.next())
+		if(!getPersonRes.next())
 		{
 			return Optional.empty();
 		}
