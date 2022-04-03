@@ -250,6 +250,26 @@ public class Database
 		this.connection.commit();
 	}
 
+	public List<Professor> listProfessors() throws SQLException
+	{
+		this.connection.rollback();
+
+		final var getProfsRes = this.selectProfessors.executeQuery();
+		final var profs = new ArrayList<Professor>();
+		while(getProfsRes.next())
+		{
+			final var prof = new Professor(
+				getProfsRes.getInt("PROFESSOR.id"),
+				getProfsRes.getString("first_name"),
+				getProfsRes.getString("last_name"),
+				getProfsRes.getString("birth_date"),
+				getProfsRes.getString("department"));
+			profs.add(prof);
+		}
+		getProfsRes.close();
+		return profs;
+	}
+
 	public void updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -299,24 +319,23 @@ public class Database
 		return old;
 	}
 
-	public List<Professor> listProfessors() throws SQLException
+	public void addTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
+		this.insertPerson.setInt(1, id);
+		this.insertPerson.setString(2, firstName);
+		this.insertPerson.setString(3, lastName);
+		this.insertPerson.setString(4, birthDate);
+		this.insertPerson.executeUpdate();
 
-		final var getProfsRes = this.selectProfessors.executeQuery();
-		final var profs = new ArrayList<Professor>();
-		while(getProfsRes.next())
-		{
-			final var prof = new Professor(
-				getProfsRes.getInt("PROFESSOR.id"),
-				getProfsRes.getString("first_name"),
-				getProfsRes.getString("last_name"),
-				getProfsRes.getString("birth_date"),
-				getProfsRes.getString("department"));
-			profs.add(prof);
-		}
-		getProfsRes.close();
-		return profs;
+		this.insertEmployee.setInt(1, id);
+		this.insertEmployee.setString(2, department);
+		this.insertEmployee.executeUpdate();
+
+		this.insertTA.setInt(1, id);
+		this.insertTA.executeUpdate();
+
+		this.connection.commit();
 	}
 
 	public List<TA> listTAs() throws SQLException
@@ -339,6 +358,114 @@ public class Database
 		return tas;
 	}
 
+	public void updateTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	{
+		this.connection.rollback();
+		this.updatePerson.setInt(1, id);
+		this.updatePerson.setString(2, firstName);
+		this.updatePerson.setString(3, lastName);
+		this.updatePerson.setString(4, birthDate);
+		this.updatePerson.executeUpdate();
+
+		this.updateEmployee.setInt(1, id);
+		this.updateEmployee.setString(2, department);
+		this.updateEmployee.executeUpdate();
+
+		this.connection.commit();
+	}
+
+	public TA removeTA(int id) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.selectTA.setInt(1, id);
+		final var getTARes = this.selectTA.executeQuery();
+		if(!getTARes.isBeforeFirst())
+		{
+			// Professor does not exist
+			throw new SQLException("Tried to remove TA, but TA does not exist");
+		}
+		getTARes.next();
+		final var old = new TA(
+			id,
+			getTARes.getString("department"),
+			getTARes.getString("first_name"),
+			getTARes.getString("last_name"),
+			getTARes.getString("birth_date"));
+		getTARes.close();
+
+		this.deleteTA.setInt(1, id);
+		this.deleteTA.executeUpdate();
+		
+		this.deleteEmployee.setInt(1, id);
+		this.deleteEmployee.executeUpdate();
+		
+		this.deletePerson.setInt(1, id);
+		this.deletePerson.executeUpdate();
+
+		this.connection.commit();
+		return old;
+	}
+
+	public void addAdmin(int employeeID) throws SQLException
+	{
+		this.connection.rollback();
+		this.insertAdmin.setInt(1, employeeID);
+		final var res = this.insertAdmin.executeUpdate();
+		if(res == 0)
+		{
+			throw new SQLException("Tried to make employee an admin, but employee does not exist");
+		}
+		this.connection.commit();
+	}
+
+	public List<Employee> listAdmins() throws SQLException
+	{
+		this.connection.rollback();
+
+		final var getAdminRes = this.selectAdmins.executeQuery();
+		final var admins = new ArrayList<Employee>();
+		while(getAdminRes.next())
+		{
+			final var admin = new Employee(
+				getAdminRes.getInt("TA.id"),
+				getAdminRes.getString("first_name"),
+				getAdminRes.getString("last_name"),
+				getAdminRes.getString("birth_date"),
+				getAdminRes.getString("department"));
+			admins.add(admin);
+		}
+		getAdminRes.close();
+		return admins;
+	}
+
+	public void removeAdmin(int employeeID) throws SQLException
+	{
+		this.connection.rollback();
+		this.deleteAdmin.setInt(1, employeeID);
+		final var res = this.deleteAdmin.executeUpdate();
+		if(res == 0)
+		{
+			throw new SQLException("Tried to remove an admin, but admin does not exist");
+		}
+		this.connection.commit();
+	}
+
+	public void addStudent(int id, String firstName, String lastName, String birthDate) throws SQLException
+	{
+		this.connection.rollback();
+		this.insertPerson.setInt(1, id);
+		this.insertPerson.setString(2, firstName);
+		this.insertPerson.setString(3, lastName);
+		this.insertPerson.setString(4, birthDate);
+		this.insertPerson.executeUpdate();
+
+		this.insertStudent.setInt(1, id);
+		this.insertStudent.executeUpdate();
+
+		this.connection.commit();
+	}
+
 	public List<Student> listStudents() throws SQLException
 	{
 		this.connection.rollback();
@@ -356,5 +483,34 @@ public class Database
 		}
 		getStudentsRes.close();
 		return students;
+	}
+
+	public Student removeStudent(int id) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.selectStudent.setInt(1, id);
+		final var getStudentRes = this.selectProfessor.executeQuery();
+		if(!getStudentRes.isBeforeFirst())
+		{
+			// Professor does not exist
+			throw new SQLException("Tried to remove student, but student does not exist");
+		}
+		getStudentRes.next();
+		final var old = new Student(
+			id,
+			getStudentRes.getString("first_name"),
+			getStudentRes.getString("last_name"),
+			getStudentRes.getString("birth_date"));
+		getStudentRes.close();
+
+		this.deleteStudent.setInt(1, id);
+		this.deleteStudent.executeUpdate();
+		
+		this.deletePerson.setInt(1, id);
+		this.deletePerson.executeUpdate();
+
+		this.connection.commit();
+		return old;
 	}
 }
