@@ -68,38 +68,22 @@ public class startup implements ActionListener{
 		String user = userText.getText() ; 
 		
 		try {
-			final boolean[] flags = this.db.checkLogin(Integer.parseInt(user));
-			final boolean accountExists = flags[0];
-			final boolean isStudent = flags[1];
-			final boolean isEmployee = flags[2];
-			final boolean isTeacher = flags[3];
-			final boolean isTA = flags[4];
-			final boolean isAdmin = flags[5];
-
-			if(isAdmin) {
-				admin a = new admin() ;
-				a.ad();
-			} else if(!accountExists) {
+			final var res = this.db.checkLogin(Integer.parseInt(user));
+			if(res.isEmpty())
+			{
 				//will tell the user to try again
 				LogTrue.setText("ID NOT Recognized, Please Try Again");
+				return;
+			}
+
+			final var acc = res.get();
+			if(acc.isAdmin())
+			{
+				admin a = new admin() ;
+				a.ad();
 			}
 		} catch(SQLException ex) {
 			System.out.println(ex);
 		}
-
-
-		// if(user.equals("admin")) {
-		// 	admin a = new admin() ;
-		// 	a.ad() ; 
-		// }
-		
-		// else {
-		// 	//will tell the user to try again
-		// 	LogTrue.setText("ID NOT Recognized, Please Try Again");
-			
-		// }
-		
 	}
-	
-
 }
