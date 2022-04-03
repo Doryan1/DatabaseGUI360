@@ -1,5 +1,0 @@
-INDEX VERSION 1.131+C:\Users\brian\My Drive\USC\CSCI-360\DatabaseGUI360\.metadata\.plugins\org.eclipse.jdt.core
-1865797976.index
-2390050412.index
-1167275426.index
-3863111052.index
