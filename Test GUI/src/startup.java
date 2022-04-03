@@ -76,12 +76,14 @@ public class startup implements ActionListener{
 				return;
 			}
 
+			//admin login is 1
 			final var acc = res.get();
 			if(acc.isAdmin())
 			{
 				admin a = new admin() ;
 				a.ad();
 			}
+			//after admin is set up this will be the place to add if statments for the rest of the main classes
 		} catch(SQLException ex) {
 			System.out.println(ex);
 		}
