@@ -49,6 +49,16 @@ public class Database
 	private final PreparedStatement selectAdmins;
 	private final PreparedStatement deleteAdmin;
 
+	private final PreparedStatement insertClass;
+	private final PreparedStatement selectClasses;
+	private final PreparedStatement deleteClass;
+
+	private final PreparedStatement insertClassProfessor;
+	private final PreparedStatement deleteClassProfessor;
+
+	private final PreparedStatement insertClassTA;
+	private final PreparedStatement deleteClassTA;
+
 	public Database(String dbPath) throws SQLException
 	{
 		final var url = "jdbc:sqlite:" + dbPath;
@@ -181,6 +191,74 @@ public class Database
 		this.deleteAdmin = this.connection.prepareStatement("""
 			DELETE FROM ADMIN
 				WHERE employee_id = ?""");
+
+		// Class
+		this.insertClass = this.connection.prepareStatement("""
+			INSERT INTO CLASS (department, number, section, semester, year)
+				VALUES (?, ?, ?, ?, ?)
+				RETURNING id;""");
+		this.selectClasses = this.connection.prepareStatement("""
+			SELECT id, department, number, section, semester, year
+				FROM CLASS;""");
+		this.deleteClass = this.connection.prepareStatement("""
+			DELETE
+				FROM CLASS
+				WHERE
+					department = ?
+					AND number = ?
+					AND section = ?
+					AND semester = ?
+					AND year = ?;""");
+		
+		// Professors and Classes
+		this.insertClassProfessor = this.connection.prepareStatement("""
+			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
+				SELECT ?, id
+					FROM CLASS
+						WHERE
+							department = ?
+							AND number = ?
+							AND section = ?
+							AND semester = ?
+							AND year = ?;""");
+		this.deleteClassProfessor = this.connection.prepareStatement("""
+			DELETE FROM CLASS_PROFESSOR
+				WHERE
+					professor_id = ?
+					AND class_id IN(
+						SELECT id
+							FROM CLASS
+							WHERE
+								department = ?
+								AND number = ?
+								AND section = ?
+								AND semester = ?
+								AND year = ?);""");
+		
+		// TAs and Classes
+		this.insertClassTA = this.connection.prepareStatement("""
+			INSERT INTO CLASS_TA (ta_id, class_id)
+				SELECT ?, id
+					FROM CLASS
+						WHERE
+							department = ?
+							AND number = ?
+							AND section = ?
+							AND semester = ?
+							AND year = ?;""");
+		this.deleteClassTA = this.connection.prepareStatement("""
+			DELETE FROM CLASS_TA
+				WHERE
+					ta_id = ?
+					AND class_id IN(
+						SELECT id
+							FROM CLASS
+							WHERE
+								department = ?
+								AND number = ?
+								AND section = ?
+								AND semester = ?
+								AND year = ?);""");
 	}
 
 	public Optional<LoginResult> checkLogin(int id) throws SQLException
@@ -380,7 +458,7 @@ public class Database
 
 		this.selectTA.setInt(1, id);
 		final var getTARes = this.selectTA.executeQuery();
-		if(!getTARes.isBeforeFirst())
+		if(!getTARes.next())
 		{
 			// Professor does not exist
 			throw new SQLException("Tried to remove TA, but TA does not exist");
@@ -491,7 +569,7 @@ public class Database
 
 		this.selectStudent.setInt(1, id);
 		final var getStudentRes = this.selectProfessor.executeQuery();
-		if(!getStudentRes.isBeforeFirst())
+		if(!getStudentRes.next())
 		{
 			// Professor does not exist
 			throw new SQLException("Tried to remove student, but student does not exist");
@@ -512,5 +590,130 @@ public class Database
 
 		this.connection.commit();
 		return old;
+	}
+
+	public void addClass(String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClass.setString(1, department);
+		this.insertClass.setInt(2, number);
+		this.insertClass.setInt(3, section);
+		this.insertClass.setInt(4, semester);
+		this.insertClass.setInt(5, year);
+		this.insertClass.executeUpdate();
+		
+		this.connection.commit();
+	}
+
+	public List<Class> listClasses() throws SQLException
+	{
+		this.connection.rollback();
+
+		final var selClassRes = this.selectClasses.executeQuery();
+		final var classes = new ArrayList<Class>();
+		while(selClassRes.next())
+		{
+			final var c = new Class(
+				selClassRes.getString("department"),
+				selClassRes.getInt("number"),
+				selClassRes.getInt("section"),
+				selClassRes.getInt("semester"),
+				selClassRes.getInt("year"));
+			classes.add(c);
+		}
+		return classes;
+	}
+
+	public void removeClass(String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClass.setString(1, department);
+		this.deleteClass.setInt(2, number);
+		this.deleteClass.setInt(3, section);
+		this.deleteClass.setInt(4, semester);
+		this.deleteClass.setInt(5, year);
+		final var res = this.deleteClass.executeUpdate();
+		if(res==0)
+		{
+			throw new SQLException("Tried to remove class, but class does not exist");
+		}
+		
+		this.connection.commit();
+	}
+
+	public void addProfessorToClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClassProfessor.setInt(1, professorId);
+		this.insertClassProfessor.setString(2, department);
+		this.insertClassProfessor.setInt(3, number);
+		this.insertClassProfessor.setInt(4, section);
+		this.insertClassProfessor.setInt(5, semester);
+		this.insertClassProfessor.setInt(6, year);
+		final var insClassProfRes = this.insertClassProfessor.executeUpdate();
+		if(insClassProfRes == 0)
+		{
+			throw new SQLException("Tried to add Professor to class, but class does not exist");
+		}
+
+		this.connection.commit();
+	}
+
+	public void removeProfessorFromClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClassProfessor.setInt(1, professorId);
+		this.deleteClassProfessor.setString(2, department);
+		this.deleteClassProfessor.setInt(3, number);
+		this.deleteClassProfessor.setInt(4, section);
+		this.deleteClassProfessor.setInt(5, semester);
+		this.deleteClassProfessor.setInt(6, year);
+		final var delClassProfRes = this.deleteClassProfessor.executeUpdate();
+		if(delClassProfRes == 0)
+		{
+			throw new SQLException("Tried to remove Professor from class, but professor not assigned to class");
+		}
+		this.connection.commit();
+	}
+
+	public void addTAToClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClassTA.setInt(1, TAId);
+		this.insertClassTA.setString(2, department);
+		this.insertClassTA.setInt(3, number);
+		this.insertClassTA.setInt(4, section);
+		this.insertClassTA.setInt(5, semester);
+		this.insertClassTA.setInt(6, year);
+		final var insClassTARes = this.insertClassTA.executeUpdate();
+		if(insClassTARes == 0)
+		{
+			throw new SQLException("Tried to add TA to class, but class does not exist");
+		}
+
+		this.connection.commit();
+	}
+
+	public void removeTAFromClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClassTA.setInt(1, TAId);
+		this.deleteClassTA.setString(2, department);
+		this.deleteClassTA.setInt(3, number);
+		this.deleteClassTA.setInt(4, section);
+		this.deleteClassTA.setInt(5, semester);
+		this.deleteClassTA.setInt(6, year);
+		final var delClassTARes = this.deleteClassTA.executeUpdate();
+		if(delClassTARes == 0)
+		{
+			throw new SQLException("Tried to remove TA from class, but TA not assigned to class");
+		}
+		this.connection.commit();
 	}
 }
