@@ -348,9 +348,25 @@ public class Database
 		return profs;
 	}
 
-	public void updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public Professor updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
+
+		this.selectProfessor.setInt(1, id);
+		final var selProfRes = this.selectProfessor.executeQuery();
+		if(!selProfRes.next())
+		{
+			throw new SQLException("Tried to update professor, but professor does not exist.");
+		}
+
+		final var old = new Professor(
+			id,
+			selProfRes.getString("first_name"),
+			selProfRes.getString("last_name"),
+			selProfRes.getString("birth_date"),
+			selProfRes.getString("department"));
+		selProfRes.close();
+
 		this.updatePerson.setInt(1, id);
 		this.updatePerson.setString(2, firstName);
 		this.updatePerson.setString(3, lastName);
