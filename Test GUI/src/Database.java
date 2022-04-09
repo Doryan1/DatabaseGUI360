@@ -16,9 +16,14 @@ record LoginResult(
 	boolean isTa,
 	boolean isAdmin){}
 
+/**
+ * Class that handles connecting to and manipulating the database.
+ * Requires a SQLite compatible database driver.
+ */
 public class Database
 {
 	private final Connection connection;
+
 	private final PreparedStatement insertPerson;
 	private final PreparedStatement selectPerson;
 	private final PreparedStatement updatePerson;
@@ -49,8 +54,25 @@ public class Database
 	private final PreparedStatement selectAdmins;
 	private final PreparedStatement deleteAdmin;
 
+	private final PreparedStatement insertClass;
+	private final PreparedStatement selectClasses;
+	private final PreparedStatement deleteClass;
+
+	private final PreparedStatement insertClassProfessor;
+	private final PreparedStatement deleteClassProfessor;
+
+	private final PreparedStatement insertClassTA;
+	private final PreparedStatement deleteClassTA;
+
+	/**
+	 * Create a database connection and set up the necessary procedures. Parameter is the
+	 * path to the database file relative to the CWD.
+	 * @param dbPath
+	 * @throws SQLException
+	 */
 	public Database(String dbPath) throws SQLException
 	{
+		// TODO: Setup db if not found.
 		final var url = "jdbc:sqlite:" + dbPath;
 		this.connection = DriverManager.getConnection(url);
 		this.connection.setAutoCommit(false);
@@ -181,8 +203,84 @@ public class Database
 		this.deleteAdmin = this.connection.prepareStatement("""
 			DELETE FROM ADMIN
 				WHERE employee_id = ?""");
+
+		// Class
+		this.insertClass = this.connection.prepareStatement("""
+			INSERT INTO CLASS (department, number, section, semester, year)
+				VALUES (?, ?, ?, ?, ?)
+				RETURNING id;""");
+		this.selectClasses = this.connection.prepareStatement("""
+			SELECT id, department, number, section, semester, year
+				FROM CLASS;""");
+		this.deleteClass = this.connection.prepareStatement("""
+			DELETE
+				FROM CLASS
+				WHERE
+					department = ?
+					AND number = ?
+					AND section = ?
+					AND semester = ?
+					AND year = ?;""");
+		
+		// Professors and Classes
+		this.insertClassProfessor = this.connection.prepareStatement("""
+			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
+				SELECT ?, id
+					FROM CLASS
+						WHERE
+							department = ?
+							AND number = ?
+							AND section = ?
+							AND semester = ?
+							AND year = ?;""");
+		this.deleteClassProfessor = this.connection.prepareStatement("""
+			DELETE FROM CLASS_PROFESSOR
+				WHERE
+					professor_id = ?
+					AND class_id IN(
+						SELECT id
+							FROM CLASS
+							WHERE
+								department = ?
+								AND number = ?
+								AND section = ?
+								AND semester = ?
+								AND year = ?);""");
+		
+		// TAs and Classes
+		this.insertClassTA = this.connection.prepareStatement("""
+			INSERT INTO CLASS_TA (ta_id, class_id)
+				SELECT ?, id
+					FROM CLASS
+						WHERE
+							department = ?
+							AND number = ?
+							AND section = ?
+							AND semester = ?
+							AND year = ?;""");
+		this.deleteClassTA = this.connection.prepareStatement("""
+			DELETE FROM CLASS_TA
+				WHERE
+					ta_id = ?
+					AND class_id IN(
+						SELECT id
+							FROM CLASS
+							WHERE
+								department = ?
+								AND number = ?
+								AND section = ?
+								AND semester = ?
+								AND year = ?);""");
 	}
 
+	/**
+	 * Performs a lookup for the given user ID and returns basic information about the
+	 * account as well as permissions. The returned optional will be present if the account exist.
+	 * Conversely, the optional will not be present if the account does not exist.
+	 * @param id
+	 * @return 
+	 * @throws SQLException
+	 */
 	public Optional<LoginResult> checkLogin(int id) throws SQLException
 	{
 		this.selectPerson.setInt(1, id);
@@ -231,6 +329,15 @@ public class Database
 			isAdmin));
 	}
 
+	/**
+	 * Add a professor to the database. A professor by default is not assigned to any classes.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void addProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -250,6 +357,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every Professor currently in the database
+	 * @return
+	 * @throws SQLException
+	 */
 	public List<Professor> listProfessors() throws SQLException
 	{
 		this.connection.rollback();
@@ -270,9 +382,35 @@ public class Database
 		return profs;
 	}
 
-	public void updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	/**
+	 * Overwrites the information 
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @return The professor's information before it was updated
+	 * @throws SQLException
+	 */
+	public Professor updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
+
+		this.selectProfessor.setInt(1, id);
+		final var selProfRes = this.selectProfessor.executeQuery();
+		if(!selProfRes.next())
+		{
+			throw new SQLException("Tried to update professor, but professor does not exist.");
+		}
+
+		final var old = new Professor(
+			id,
+			selProfRes.getString("first_name"),
+			selProfRes.getString("last_name"),
+			selProfRes.getString("birth_date"),
+			selProfRes.getString("department"));
+		selProfRes.close();
+
 		this.updatePerson.setInt(1, id);
 		this.updatePerson.setString(2, firstName);
 		this.updatePerson.setString(3, lastName);
@@ -284,8 +422,15 @@ public class Database
 		this.updateEmployee.executeUpdate();
 
 		this.connection.commit();
+		return old;
 	}
 
+	/**
+	 * Removes from the database the professor with the give ID
+	 * @param id
+	 * @return The professor that was removed.
+	 * @throws SQLException
+	 */
 	public Professor removeProfessor(int id) throws SQLException
 	{
 		this.connection.rollback();
@@ -319,6 +464,15 @@ public class Database
 		return old;
 	}
 
+	/**
+	 * Adds a TA to the database with the given information
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void addTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -338,6 +492,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every TA in the database.
+	 * @return The list of TAs
+	 * @throws SQLException
+	 */
 	public List<TA> listTAs() throws SQLException
 	{
 		this.connection.rollback();
@@ -358,6 +517,15 @@ public class Database
 		return tas;
 	}
 
+	/**
+	 * Updates a TA in the database with the given information. Account is based on the ID.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void updateTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -374,13 +542,19 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Removes the TA with the given id from the database.
+	 * @param id
+	 * @return The TA that was removed.
+	 * @throws SQLException
+	 */
 	public TA removeTA(int id) throws SQLException
 	{
 		this.connection.rollback();
 
 		this.selectTA.setInt(1, id);
 		final var getTARes = this.selectTA.executeQuery();
-		if(!getTARes.isBeforeFirst())
+		if(!getTARes.next())
 		{
 			// Professor does not exist
 			throw new SQLException("Tried to remove TA, but TA does not exist");
@@ -407,6 +581,11 @@ public class Database
 		return old;
 	}
 
+	/**
+	 * Makes the employee with the given ID into an admin.
+	 * @param employeeID
+	 * @throws SQLException
+	 */
 	public void addAdmin(int employeeID) throws SQLException
 	{
 		this.connection.rollback();
@@ -419,6 +598,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every admin currently in the database
+	 * @return The list of employees marked as admins
+	 * @throws SQLException
+	 */
 	public List<Employee> listAdmins() throws SQLException
 	{
 		this.connection.rollback();
@@ -439,6 +623,12 @@ public class Database
 		return admins;
 	}
 
+	/**
+	 * Make the employee with the given ID no longer an admin.
+	 * Does not remove account from system.
+	 * @param employeeID
+	 * @throws SQLException
+	 */
 	public void removeAdmin(int employeeID) throws SQLException
 	{
 		this.connection.rollback();
@@ -451,6 +641,14 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Adds a student with the given information to the database.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @throws SQLException
+	 */
 	public void addStudent(int id, String firstName, String lastName, String birthDate) throws SQLException
 	{
 		this.connection.rollback();
@@ -466,6 +664,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every student currently in the syste.
+	 * @return A list of students.
+	 * @throws SQLException
+	 */
 	public List<Student> listStudents() throws SQLException
 	{
 		this.connection.rollback();
@@ -485,13 +688,19 @@ public class Database
 		return students;
 	}
 
+	/**
+	 * Removes the student with the given ID from the system.
+	 * @param id
+	 * @return The student that was removed.
+	 * @throws SQLException
+	 */
 	public Student removeStudent(int id) throws SQLException
 	{
 		this.connection.rollback();
 
 		this.selectStudent.setInt(1, id);
 		final var getStudentRes = this.selectProfessor.executeQuery();
-		if(!getStudentRes.isBeforeFirst())
+		if(!getStudentRes.next())
 		{
 			// Professor does not exist
 			throw new SQLException("Tried to remove student, but student does not exist");
@@ -512,5 +721,193 @@ public class Database
 
 		this.connection.commit();
 		return old;
+	}
+
+	/**
+	 * Adds the given class to the system.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void addClass(String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClass.setString(1, department);
+		this.insertClass.setInt(2, number);
+		this.insertClass.setInt(3, section);
+		this.insertClass.setInt(4, semester);
+		this.insertClass.setInt(5, year);
+		this.insertClass.executeUpdate();
+		
+		this.connection.commit();
+	}
+
+	/**
+	 * Lists every class currently in the database.
+	 * @return A List of Classes
+	 * @throws SQLException
+	 */
+	public List<Class> listClasses() throws SQLException
+	{
+		this.connection.rollback();
+
+		final var selClassRes = this.selectClasses.executeQuery();
+		final var classes = new ArrayList<Class>();
+		while(selClassRes.next())
+		{
+			final var c = new Class(
+				selClassRes.getString("department"),
+				selClassRes.getInt("number"),
+				selClassRes.getInt("section"),
+				selClassRes.getInt("semester"),
+				selClassRes.getInt("year"));
+			classes.add(c);
+		}
+		return classes;
+	}
+
+	/**
+	 * Removes the given class from the database.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void removeClass(String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClass.setString(1, department);
+		this.deleteClass.setInt(2, number);
+		this.deleteClass.setInt(3, section);
+		this.deleteClass.setInt(4, semester);
+		this.deleteClass.setInt(5, year);
+		final var res = this.deleteClass.executeUpdate();
+		if(res==0)
+		{
+			throw new SQLException("Tried to remove class, but class does not exist");
+		}
+		
+		this.connection.commit();
+	}
+
+	/**
+	 * Assigns the professor with the given ID to the given class.
+	 * @param professorId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void addProfessorToClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClassProfessor.setInt(1, professorId);
+		this.insertClassProfessor.setString(2, department);
+		this.insertClassProfessor.setInt(3, number);
+		this.insertClassProfessor.setInt(4, section);
+		this.insertClassProfessor.setInt(5, semester);
+		this.insertClassProfessor.setInt(6, year);
+		final var insClassProfRes = this.insertClassProfessor.executeUpdate();
+		if(insClassProfRes == 0)
+		{
+			throw new SQLException("Tried to add Professor to class, but class does not exist");
+		}
+
+		this.connection.commit();
+	}
+
+	/**
+	 * Un-assigns the professor with the given ID from the given class.
+	 * @param professorId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void removeProfessorFromClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClassProfessor.setInt(1, professorId);
+		this.deleteClassProfessor.setString(2, department);
+		this.deleteClassProfessor.setInt(3, number);
+		this.deleteClassProfessor.setInt(4, section);
+		this.deleteClassProfessor.setInt(5, semester);
+		this.deleteClassProfessor.setInt(6, year);
+		final var delClassProfRes = this.deleteClassProfessor.executeUpdate();
+		if(delClassProfRes == 0)
+		{
+			throw new SQLException("Tried to remove Professor from class, but professor not assigned to class");
+		}
+		this.connection.commit();
+	}
+
+	/**
+	 * Assigns the TA with the given ID to the given class.
+	 * @param TAId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void addTAToClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.insertClassTA.setInt(1, TAId);
+		this.insertClassTA.setString(2, department);
+		this.insertClassTA.setInt(3, number);
+		this.insertClassTA.setInt(4, section);
+		this.insertClassTA.setInt(5, semester);
+		this.insertClassTA.setInt(6, year);
+		final var insClassTARes = this.insertClassTA.executeUpdate();
+		if(insClassTARes == 0)
+		{
+			throw new SQLException("Tried to add TA to class, but class does not exist");
+		}
+
+		this.connection.commit();
+	}
+
+	/**
+	 * Un-assigns the TA with the given ID from the given class.
+	 * @param TAId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void removeTAFromClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.deleteClassTA.setInt(1, TAId);
+		this.deleteClassTA.setString(2, department);
+		this.deleteClassTA.setInt(3, number);
+		this.deleteClassTA.setInt(4, section);
+		this.deleteClassTA.setInt(5, semester);
+		this.deleteClassTA.setInt(6, year);
+		final var delClassTARes = this.deleteClassTA.executeUpdate();
+		if(delClassTARes == 0)
+		{
+			throw new SQLException("Tried to remove TA from class, but TA not assigned to class");
+		}
+		this.connection.commit();
 	}
 }
