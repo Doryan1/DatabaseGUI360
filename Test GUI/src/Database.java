@@ -16,9 +16,14 @@ record LoginResult(
 	boolean isTa,
 	boolean isAdmin){}
 
+/**
+ * Class that handles connecting to and manipulating the database.
+ * Requires a SQLite compatible database driver.
+ */
 public class Database
 {
 	private final Connection connection;
+
 	private final PreparedStatement insertPerson;
 	private final PreparedStatement selectPerson;
 	private final PreparedStatement updatePerson;
@@ -59,8 +64,15 @@ public class Database
 	private final PreparedStatement insertClassTA;
 	private final PreparedStatement deleteClassTA;
 
+	/**
+	 * Create a database connection and set up the necessary procedures. Parameter is the
+	 * path to the database file relative to the CWD.
+	 * @param dbPath
+	 * @throws SQLException
+	 */
 	public Database(String dbPath) throws SQLException
 	{
+		// TODO: Setup db if not found.
 		final var url = "jdbc:sqlite:" + dbPath;
 		this.connection = DriverManager.getConnection(url);
 		this.connection.setAutoCommit(false);
@@ -261,6 +273,14 @@ public class Database
 								AND year = ?);""");
 	}
 
+	/**
+	 * Performs a lookup for the given user ID and returns basic information about the
+	 * account as well as permissions. The returned optional will be present if the account exist.
+	 * Conversely, the optional will not be present if the account does not exist.
+	 * @param id
+	 * @return 
+	 * @throws SQLException
+	 */
 	public Optional<LoginResult> checkLogin(int id) throws SQLException
 	{
 		this.selectPerson.setInt(1, id);
@@ -309,6 +329,15 @@ public class Database
 			isAdmin));
 	}
 
+	/**
+	 * Add a professor to the database. A professor by default is not assigned to any classes.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void addProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -328,6 +357,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every Professor currently in the database
+	 * @return
+	 * @throws SQLException
+	 */
 	public List<Professor> listProfessors() throws SQLException
 	{
 		this.connection.rollback();
@@ -348,6 +382,16 @@ public class Database
 		return profs;
 	}
 
+	/**
+	 * Overwrites the information 
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @return The professor's information before it was updated
+	 * @throws SQLException
+	 */
 	public Professor updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -378,8 +422,15 @@ public class Database
 		this.updateEmployee.executeUpdate();
 
 		this.connection.commit();
+		return old;
 	}
 
+	/**
+	 * Removes from the database the professor with the give ID
+	 * @param id
+	 * @return The professor that was removed.
+	 * @throws SQLException
+	 */
 	public Professor removeProfessor(int id) throws SQLException
 	{
 		this.connection.rollback();
@@ -413,6 +464,15 @@ public class Database
 		return old;
 	}
 
+	/**
+	 * Adds a TA to the database with the given information
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void addTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -432,6 +492,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every TA in the database.
+	 * @return The list of TAs
+	 * @throws SQLException
+	 */
 	public List<TA> listTAs() throws SQLException
 	{
 		this.connection.rollback();
@@ -452,6 +517,15 @@ public class Database
 		return tas;
 	}
 
+	/**
+	 * Updates a TA in the database with the given information. Account is based on the ID.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @param department
+	 * @throws SQLException
+	 */
 	public void updateTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
 	{
 		this.connection.rollback();
@@ -468,6 +542,12 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Removes the TA with the given id from the database.
+	 * @param id
+	 * @return The TA that was removed.
+	 * @throws SQLException
+	 */
 	public TA removeTA(int id) throws SQLException
 	{
 		this.connection.rollback();
@@ -501,6 +581,11 @@ public class Database
 		return old;
 	}
 
+	/**
+	 * Makes the employee with the given ID into an admin.
+	 * @param employeeID
+	 * @throws SQLException
+	 */
 	public void addAdmin(int employeeID) throws SQLException
 	{
 		this.connection.rollback();
@@ -513,6 +598,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every admin currently in the database
+	 * @return The list of employees marked as admins
+	 * @throws SQLException
+	 */
 	public List<Employee> listAdmins() throws SQLException
 	{
 		this.connection.rollback();
@@ -533,6 +623,12 @@ public class Database
 		return admins;
 	}
 
+	/**
+	 * Make the employee with the given ID no longer an admin.
+	 * Does not remove account from system.
+	 * @param employeeID
+	 * @throws SQLException
+	 */
 	public void removeAdmin(int employeeID) throws SQLException
 	{
 		this.connection.rollback();
@@ -545,6 +641,14 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Adds a student with the given information to the database.
+	 * @param id
+	 * @param firstName
+	 * @param lastName
+	 * @param birthDate
+	 * @throws SQLException
+	 */
 	public void addStudent(int id, String firstName, String lastName, String birthDate) throws SQLException
 	{
 		this.connection.rollback();
@@ -560,6 +664,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every student currently in the syste.
+	 * @return A list of students.
+	 * @throws SQLException
+	 */
 	public List<Student> listStudents() throws SQLException
 	{
 		this.connection.rollback();
@@ -579,6 +688,12 @@ public class Database
 		return students;
 	}
 
+	/**
+	 * Removes the student with the given ID from the system.
+	 * @param id
+	 * @return The student that was removed.
+	 * @throws SQLException
+	 */
 	public Student removeStudent(int id) throws SQLException
 	{
 		this.connection.rollback();
@@ -608,6 +723,15 @@ public class Database
 		return old;
 	}
 
+	/**
+	 * Adds the given class to the system.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void addClass(String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
@@ -622,6 +746,11 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Lists every class currently in the database.
+	 * @return A List of Classes
+	 * @throws SQLException
+	 */
 	public List<Class> listClasses() throws SQLException
 	{
 		this.connection.rollback();
@@ -641,6 +770,15 @@ public class Database
 		return classes;
 	}
 
+	/**
+	 * Removes the given class from the database.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void removeClass(String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
@@ -659,6 +797,16 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Assigns the professor with the given ID to the given class.
+	 * @param professorId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void addProfessorToClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
@@ -678,6 +826,16 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Un-assigns the professor with the given ID from the given class.
+	 * @param professorId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void removeProfessorFromClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
@@ -696,6 +854,16 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Assigns the TA with the given ID to the given class.
+	 * @param TAId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void addTAToClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
@@ -715,6 +883,16 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Un-assigns the TA with the given ID from the given class.
+	 * @param TAId
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void removeTAFromClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
 	{
 		this.connection.rollback();
