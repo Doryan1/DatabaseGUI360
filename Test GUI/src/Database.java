@@ -109,7 +109,7 @@ public class Database
 					FROM PERSON
 					WHERE id = ?""");
 		this.updatePerson = this.connection.prepareStatement("""
-			UPDATE PERSON 
+			UPDATE PERSON
 				SET
 					first_name = ?,
 					last_name = ?,
@@ -149,7 +149,7 @@ public class Database
 						ON EMPLOYEE.person_id = PERSON.id
 				WHERE id = ?""");
 		this.updateEmployee = this.connection.prepareStatement("""
-			UPDATE EMPLOYEE 
+			UPDATE EMPLOYEE
 				SET department = ?
 				WHERE person_id = ?""");
 		this.deleteEmployee = this.connection.prepareStatement("""
@@ -233,7 +233,7 @@ public class Database
 		this.selectClassID = this.connection.prepareStatement("""
 			SELECT id
 				FROM CLASS
-				WHERE 
+				WHERE
 					department = ?
 					AND number = ?
 					AND section = ?
@@ -251,7 +251,7 @@ public class Database
 					AND section = ?
 					AND semester = ?
 					AND year = ?;""");
-		
+
 		// Professors and Classes
 		this.insertClassProfessor = this.connection.prepareStatement("""
 			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
@@ -276,7 +276,7 @@ public class Database
 								AND section = ?
 								AND semester = ?
 								AND year = ?);""");
-		
+
 		// TAs and Classes
 		this.insertClassTA = this.connection.prepareStatement("""
 			INSERT INTO CLASS_TA (ta_id, class_id)
@@ -356,7 +356,7 @@ public class Database
 	 * present if the account exist. Conversely, the optional will not be
 	 * present if the account does not exist.
 	 * @param id
-	 * @return 
+	 * @return
 	 * @throws SQLException
 	 */
 	public Optional<LoginResult> checkLogin(int id) throws SQLException
@@ -467,7 +467,7 @@ public class Database
 	}
 
 	/**
-	 * Overwrites the information 
+	 * Overwrites the information
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -542,10 +542,10 @@ public class Database
 
 		this.deleteProfessor.setInt(1, id);
 		this.deleteProfessor.executeUpdate();
-		
+
 		this.deleteEmployee.setInt(1, id);
 		this.deleteEmployee.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -670,10 +670,10 @@ public class Database
 
 		this.deleteTA.setInt(1, id);
 		this.deleteTA.executeUpdate();
-		
+
 		this.deleteEmployee.setInt(1, id);
 		this.deleteEmployee.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -819,7 +819,7 @@ public class Database
 
 		this.deleteStudent.setInt(1, id);
 		this.deleteStudent.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -851,7 +851,7 @@ public class Database
 		this.insertClass.setInt(4, semester);
 		this.insertClass.setInt(5, year);
 		this.insertClass.executeUpdate();
-		
+
 		this.connection.commit();
 	}
 
@@ -928,7 +928,7 @@ public class Database
 		{
 			throw new SQLException("Tried to remove class, but class does not exist");
 		}
-		
+
 		this.connection.commit();
 	}
 
