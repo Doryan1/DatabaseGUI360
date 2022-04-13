@@ -2,9 +2,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 import java.util.Optional;
+import java.util.OptionalInt;
+
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 record LoginResult(
 	int id,
@@ -15,6 +21,16 @@ record LoginResult(
 	boolean isProfessor,
 	boolean isTa,
 	boolean isAdmin){}
+
+record Assignment(
+	int studentID,
+	String department,
+	int number,
+	int section,
+	int semester,
+	int year,
+	String assignment,
+	int grade){}
 
 /**
  * Class that handles connecting to and manipulating the database.
@@ -55,6 +71,7 @@ public class Database
 	private final PreparedStatement deleteAdmin;
 
 	private final PreparedStatement insertClass;
+	private final PreparedStatement selectClassID;
 	private final PreparedStatement selectClasses;
 	private final PreparedStatement deleteClass;
 
@@ -64,9 +81,18 @@ public class Database
 	private final PreparedStatement insertClassTA;
 	private final PreparedStatement deleteClassTA;
 
+	private final PreparedStatement insertAssignment;
+	private final PreparedStatement selectAssignment;
+	private final PreparedStatement selectStudentAssignments;
+	private final PreparedStatement selectClassAssignments;
+	private final PreparedStatement selectStudentClassAssignments;
+	private final PreparedStatement updateAssignment;
+	private final PreparedStatement deleteAssignment;
+
+
 	/**
-	 * Create a database connection and set up the necessary procedures. Parameter is the
-	 * path to the database file relative to the CWD.
+	 * Create a database connection and set up the necessary procedures.
+	 * Parameter is the path to the database file relative to the CWD.
 	 * @param dbPath
 	 * @throws SQLException
 	 */
@@ -88,7 +114,7 @@ public class Database
 					FROM PERSON
 					WHERE id = ?""");
 		this.updatePerson = this.connection.prepareStatement("""
-			UPDATE PERSON 
+			UPDATE PERSON
 				SET
 					first_name = ?,
 					last_name = ?,
@@ -128,7 +154,7 @@ public class Database
 						ON EMPLOYEE.person_id = PERSON.id
 				WHERE id = ?""");
 		this.updateEmployee = this.connection.prepareStatement("""
-			UPDATE EMPLOYEE 
+			UPDATE EMPLOYEE
 				SET department = ?
 				WHERE person_id = ?""");
 		this.deleteEmployee = this.connection.prepareStatement("""
@@ -209,6 +235,15 @@ public class Database
 			INSERT INTO CLASS (department, number, section, semester, year)
 				VALUES (?, ?, ?, ?, ?)
 				RETURNING id;""");
+		this.selectClassID = this.connection.prepareStatement("""
+			SELECT id
+				FROM CLASS
+				WHERE
+					department = ?
+					AND number = ?
+					AND section = ?
+					AND semester = ?
+					AND year = ?;""");
 		this.selectClasses = this.connection.prepareStatement("""
 			SELECT id, department, number, section, semester, year
 				FROM CLASS;""");
@@ -221,7 +256,7 @@ public class Database
 					AND section = ?
 					AND semester = ?
 					AND year = ?;""");
-		
+
 		// Professors and Classes
 		this.insertClassProfessor = this.connection.prepareStatement("""
 			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
@@ -246,7 +281,7 @@ public class Database
 								AND section = ?
 								AND semester = ?
 								AND year = ?);""");
-		
+
 		// TAs and Classes
 		this.insertClassTA = this.connection.prepareStatement("""
 			INSERT INTO CLASS_TA (ta_id, class_id)
@@ -271,14 +306,85 @@ public class Database
 								AND section = ?
 								AND semester = ?
 								AND year = ?);""");
+
+		// Assignments
+		this.insertAssignment = this.connection.prepareStatement("""
+			INSERT INTO ASSIGNMENT (class_id, student_id, name, grade)
+				VALUES (?, ?, ?, ?)""");
+		this.selectAssignment = this.connection.prepareStatement("""
+			SELECT (grade)
+				FROM ASSIGNMENT
+					INNER JOIN CLASS
+						ON ASSIGNMENT.class_id = CLASS.id
+				WHERE
+					student_id = ?
+					AND name = ?
+					AND class_id = ?""");
+		this.selectStudentAssignments = this.connection.prepareStatement("""
+			SELECT name, grade, department, number, section, semester, year
+				FROM ASSIGNMENT
+					INNER JOIN CLASS
+						ON ASSIGNMENT.class_id = CLASS.id
+				WHERE
+					student_id = ?""");
+		this.selectClassAssignments = this.connection.prepareStatement("""
+			SELECT student_id, name, grade
+				FROM ASSIGNMENT
+				WHERE
+					class_id = ?""");
+		this.selectStudentClassAssignments = this.connection.prepareStatement("""
+			SELECT student_id, name, grade
+				FROM ASSIGNMENT
+				WHERE
+					class_id = ?
+					AND student_id = ?""");
+		this.updateAssignment = this.connection.prepareStatement("""
+			UPDATE ASSIGNMENT
+				SET
+					grade = ?
+				WHERE
+					class_id = ?
+					AND student_id = ?
+					AND name = ?""");
+		this.deleteAssignment = this.connection.prepareStatement("""
+			DELETE FROM ASSIGNMENT
+				WHERE
+					class_id = ?
+					AND student_id = ?
+					AND name = ?
+				RETURNING grade""");
+	}
+
+	private static TableModel makeTableModel(ResultSet rs) throws SQLException
+	{
+		final var meta = rs.getMetaData();
+		final var cCount = meta.getColumnCount();
+		final var columns = new Vector<String>(cCount);
+		for(int c = 1; c <= cCount; c +=1)
+		{
+			columns.add(meta.getColumnName(c));
+		}
+
+		final var data = new Vector<Vector<Object>>();
+		while(rs.next())
+		{
+			final var row = new Vector<Object>();
+			for(int c=1; c<=cCount; c+=1)
+			{
+				row.add(rs.getObject(c));
+			}
+			data.add(row);
+		}
+		return new DefaultTableModel(data, columns);
 	}
 
 	/**
-	 * Performs a lookup for the given user ID and returns basic information about the
-	 * account as well as permissions. The returned optional will be present if the account exist.
-	 * Conversely, the optional will not be present if the account does not exist.
+	 * Performs a lookup for the given user ID and returns basic information
+	 * about the account as well as permissions. The returned optional will be
+	 * present if the account exist. Conversely, the optional will not be
+	 * present if the account does not exist.
 	 * @param id
-	 * @return 
+	 * @return
 	 * @throws SQLException
 	 */
 	public Optional<LoginResult> checkLogin(int id) throws SQLException
@@ -330,7 +436,8 @@ public class Database
 	}
 
 	/**
-	 * Add a professor to the database. A professor by default is not assigned to any classes.
+	 * Add a professor to the database.
+	 * A professor by default is not assigned to any classes.
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -338,7 +445,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void addProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void addProfessor(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -362,28 +474,29 @@ public class Database
 	 * @return
 	 * @throws SQLException
 	 */
-	public List<Professor> listProfessors() throws SQLException
+	public TableModel listProfessors() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var getProfsRes = this.selectProfessors.executeQuery();
-		final var profs = new ArrayList<Professor>();
-		while(getProfsRes.next())
-		{
-			final var prof = new Professor(
-				getProfsRes.getInt("PROFESSOR.id"),
-				getProfsRes.getString("first_name"),
-				getProfsRes.getString("last_name"),
-				getProfsRes.getString("birth_date"),
-				getProfsRes.getString("department"));
-			profs.add(prof);
-		}
-		getProfsRes.close();
-		return profs;
+		// final var profs = new ArrayList<Professor>();
+		// while(getProfsRes.next())
+		// {
+		// 	final var prof = new Professor(
+		// 		getProfsRes.getInt("PROFESSOR.id"),
+		// 		getProfsRes.getString("first_name"),
+		// 		getProfsRes.getString("last_name"),
+		// 		getProfsRes.getString("birth_date"),
+		// 		getProfsRes.getString("department"));
+		// 	profs.add(prof);
+		// }
+		// getProfsRes.close();
+		// return profs;
+		return makeTableModel(getProfsRes);
 	}
 
 	/**
-	 * Overwrites the information 
+	 * Overwrites the information
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -392,7 +505,12 @@ public class Database
 	 * @return The professor's information before it was updated
 	 * @throws SQLException
 	 */
-	public Professor updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public Professor updateProfessor(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -453,10 +571,10 @@ public class Database
 
 		this.deleteProfessor.setInt(1, id);
 		this.deleteProfessor.executeUpdate();
-		
+
 		this.deleteEmployee.setInt(1, id);
 		this.deleteEmployee.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -473,7 +591,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void addTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void addTA(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -518,7 +641,8 @@ public class Database
 	}
 
 	/**
-	 * Updates a TA in the database with the given information. Account is based on the ID.
+	 * Updates a TA in the database with the given information.
+	 * Account is based on the ID.
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -526,7 +650,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void updateTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void updateTA(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.updatePerson.setInt(1, id);
@@ -570,10 +699,10 @@ public class Database
 
 		this.deleteTA.setInt(1, id);
 		this.deleteTA.executeUpdate();
-		
+
 		this.deleteEmployee.setInt(1, id);
 		this.deleteEmployee.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -649,7 +778,11 @@ public class Database
 	 * @param birthDate
 	 * @throws SQLException
 	 */
-	public void addStudent(int id, String firstName, String lastName, String birthDate) throws SQLException
+	public void addStudent(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -715,7 +848,7 @@ public class Database
 
 		this.deleteStudent.setInt(1, id);
 		this.deleteStudent.executeUpdate();
-		
+
 		this.deletePerson.setInt(1, id);
 		this.deletePerson.executeUpdate();
 
@@ -732,7 +865,12 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addClass(String department, int number, int section, int semester, int year) throws SQLException
+	public void addClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -742,8 +880,29 @@ public class Database
 		this.insertClass.setInt(4, semester);
 		this.insertClass.setInt(5, year);
 		this.insertClass.executeUpdate();
-		
+
 		this.connection.commit();
+	}
+
+	private OptionalInt getClassID(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.selectClassID.setString(1, department);
+		this.selectClassID.setInt(2, number);
+		this.selectClassID.setInt(3, section);
+		this.selectClassID.setInt(4, semester);
+		this.selectClassID.setInt(5, year);
+		final var selClassIDRes = this.selectClassID.executeQuery();
+		if(!selClassIDRes.next())
+		{
+			return OptionalInt.empty();
+		}
+		final int classID = selClassIDRes.getInt("id");
+		return OptionalInt.of(classID);
 	}
 
 	/**
@@ -779,7 +938,12 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeClass(String department, int number, int section, int semester, int year) throws SQLException
+	public void removeClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -793,7 +957,7 @@ public class Database
 		{
 			throw new SQLException("Tried to remove class, but class does not exist");
 		}
-		
+
 		this.connection.commit();
 	}
 
@@ -807,7 +971,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addProfessorToClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	public void addProfessorToClass(
+		int professorId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -836,7 +1006,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeProfessorFromClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	public void removeProfessorFromClass(
+		int professorId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -864,7 +1040,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addTAToClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	public void addTAToClass(
+		int TAId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -893,7 +1075,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeTAFromClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	public void removeTAFromClass(
+		int TAId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -909,5 +1097,285 @@ public class Database
 			throw new SQLException("Tried to remove TA from class, but TA not assigned to class");
 		}
 		this.connection.commit();
+	}
+
+	/**
+	 * Add a grade for an student's assignment to a class
+	 * @param studentID
+	 * @param assignment
+	 * @param grade
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void addGrade(
+		int studentID,
+		String assignment,
+		int grade,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		final int classID = getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to add grade to class, but class does not exist"));
+
+		this.insertAssignment.setInt(1, classID);
+		this.insertAssignment.setInt(2, studentID);
+		this.insertAssignment.setString(3, assignment);
+		this.insertAssignment.setInt(4, grade);
+		this.insertAssignment.executeUpdate();
+
+		this.connection.commit();
+	}
+
+	/**
+	 * Fetch the grade given for the specified assignment in the specified
+	 * class for the specified student.
+	 * @param studentID
+	 * @param assignment
+	 * @param department
+	 * @param number
+	 * @param year
+	 * @param semester
+	 * @param section
+	 * @return
+	 * @throws SQLException
+	 */
+	public int getGrade(
+		int studentID,
+		String assignment,
+		String department,
+		int number,
+		int year,
+		int semester,
+		int section) throws SQLException
+	{
+		this.connection.rollback();
+
+		final int classID = getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to get grade for class, but class does not exist"));
+		this.selectAssignment.setInt(1, studentID);
+		this.selectAssignment.setString(2, assignment);
+		this.selectAssignment.setInt(3, classID);
+		final var selAssRes = this.selectAssignment.executeQuery();
+		if(!selAssRes.next())
+		{
+			throw new SQLException("Tried to get grade for assignment, but assignment does not exist");
+		}
+
+		return selAssRes.getInt("grade");
+	}
+
+	/**
+	 * Fetch every grade for every class for a specific student.
+	 * @param studentID
+	 * @return
+	 * @throws SQLException
+	 */
+	public List<Assignment> listGradesForStudent(int studentID) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.selectStudentAssignments.setInt(1, studentID);
+		final var selStuAssRes = this.selectStudentAssignments.executeQuery();
+		final var assignments = new ArrayList<Assignment>();
+		while(selStuAssRes.next())
+		{
+			final var assignment = new Assignment(
+				studentID,
+				selStuAssRes.getString("department"),
+				selStuAssRes.getInt("number"),
+				selStuAssRes.getInt("section"),
+				selStuAssRes.getInt("semester"),
+				selStuAssRes.getInt("year"),
+				selStuAssRes.getString("assignment"),
+				selStuAssRes.getInt("grade"));
+			assignments.add(assignment);
+		}
+		return assignments;
+	}
+
+	/**
+	 * Fetch every grade for every student in a given class.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return
+	 * @throws SQLException
+	 */
+	public List<Assignment> listGradesForClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.selectClassAssignments.setString(1, department);
+		this.selectClassAssignments.setInt(2, number);
+		this.selectClassAssignments.setInt(3, section);
+		this.selectClassAssignments.setInt(4, semester);
+		this.selectClassAssignments.setInt(5, year);
+		final var selClassAssRes = this.selectClassAssignments.executeQuery();
+		final var assignments = new ArrayList<Assignment>();
+		while(selClassAssRes.next())
+		{
+			final var assignment = new Assignment(
+				selClassAssRes.getInt("student_id"),
+				department,
+				number,
+				section,
+				semester,
+				year,
+				selClassAssRes.getString("assignment"),
+				selClassAssRes.getInt("grade"));
+			assignments.add(assignment);
+		}
+
+		return assignments;
+	}
+
+	/**
+	 * Fetch every grade a student has for the given class.
+	 * @param studentID
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return A List of Assignments
+	 * @throws SQLException
+	 */
+	public List<Assignment> listGradesForStudentInClass(
+		int studentID,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		final int classID = getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to get grades for class, but class does not exist"));
+
+		this.selectStudentClassAssignments.setInt(1, classID);
+		this.selectStudentClassAssignments.setInt(2, studentID);
+		final var selClassStudAssRes = this.selectStudentClassAssignments.executeQuery();
+		final var assignments = new ArrayList<Assignment>();
+		while(selClassStudAssRes.next())
+		{
+			final var assignment = new Assignment(
+				studentID,
+				department,
+				number,
+				section,
+				semester,
+				year,
+				selClassStudAssRes.getString("assignment"),
+				selClassStudAssRes.getInt("grade"));
+			assignments.add(assignment);
+		}
+
+		return assignments;
+	}
+
+	/**
+	 * Updates a grade for an student's assignment in a class
+	 * @param studentID
+	 * @param assignment
+	 * @param grade
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
+	public void updateGrade(
+		int studentID,
+		String assignment,
+		int grade,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		this.selectClassID.setString(1, department);
+		this.selectClassID.setInt(2, number);
+		this.selectClassID.setInt(3, section);
+		this.selectClassID.setInt(4, semester);
+		this.selectClassID.setInt(5, year);
+		final var selClassIDRes = this.selectClassID.executeQuery();
+		if(!selClassIDRes.next())
+		{
+			throw new SQLException("Tried to update grade in class, but class does not exist");
+		}
+		final int classID = selClassIDRes.getInt("id");
+		selClassIDRes.close();
+
+		this.updateAssignment.setInt(1, grade);
+		this.updateAssignment.setInt(2, classID);
+		this.updateAssignment.setInt(3, studentID);
+		this.updateAssignment.setString(4, assignment);
+		if (this.updateAssignment.executeUpdate() < 1)
+		{
+			throw new SQLException("Tried to update grade in class, but assignment does not exist");
+		}
+
+		this.connection.commit();
+	}
+
+	/**
+	 * Deletes the given assignment from the given class for the given student.
+	 * @param studentID
+	 * @param assignment
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return The grade of the removed assignment.
+	 * @throws SQLException
+	 */
+	public int removeGrade(
+		int studentID,
+		String assignment,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.connection.rollback();
+
+		final int classID = getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to remove grade from class, but class does not exist"));
+
+		this.deleteAssignment.setInt(1, classID);
+		this.deleteAssignment.setInt(2, studentID);
+		this.deleteAssignment.setString(3, assignment);
+		final var delAssRes = this.deleteAssignment.executeQuery();
+		if(!delAssRes.next())
+		{
+			throw new SQLException("Tried to remove grade from class, but assignment does not exist");
+		}
+		final int grade = delAssRes.getInt(1);
+		delAssRes.close();
+		this.connection.commit();
+		return grade;
 	}
 }
