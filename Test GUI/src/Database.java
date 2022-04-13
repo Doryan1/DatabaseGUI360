@@ -3,8 +3,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -21,16 +19,6 @@ record LoginResult(
 	boolean isProfessor,
 	boolean isTa,
 	boolean isAdmin){}
-
-record Assignment(
-	int studentID,
-	String department,
-	int number,
-	int section,
-	int semester,
-	int year,
-	String assignment,
-	int grade){}
 
 /**
  * Class that handles connecting to and manipulating the database.
@@ -479,19 +467,6 @@ public class Database
 		this.connection.rollback();
 
 		final var getProfsRes = this.selectProfessors.executeQuery();
-		// final var profs = new ArrayList<Professor>();
-		// while(getProfsRes.next())
-		// {
-		// 	final var prof = new Professor(
-		// 		getProfsRes.getInt("PROFESSOR.id"),
-		// 		getProfsRes.getString("first_name"),
-		// 		getProfsRes.getString("last_name"),
-		// 		getProfsRes.getString("birth_date"),
-		// 		getProfsRes.getString("department"));
-		// 	profs.add(prof);
-		// }
-		// getProfsRes.close();
-		// return profs;
 		return makeTableModel(getProfsRes);
 	}
 
@@ -620,24 +595,12 @@ public class Database
 	 * @return The list of TAs
 	 * @throws SQLException
 	 */
-	public List<TA> listTAs() throws SQLException
+	public TableModel listTAs() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var getTAsRes = this.selectTAs.executeQuery();
-		final var tas = new ArrayList<TA>();
-		while(getTAsRes.next())
-		{
-			final var ta = new TA(
-				getTAsRes.getInt("TA.id"),
-				getTAsRes.getString("first_name"),
-				getTAsRes.getString("last_name"),
-				getTAsRes.getString("birth_date"),
-				getTAsRes.getString("department"));
-			tas.add(ta);
-		}
-		getTAsRes.close();
-		return tas;
+		return makeTableModel(getTAsRes);
 	}
 
 	/**
@@ -732,24 +695,12 @@ public class Database
 	 * @return The list of employees marked as admins
 	 * @throws SQLException
 	 */
-	public List<Employee> listAdmins() throws SQLException
+	public TableModel listAdmins() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var getAdminRes = this.selectAdmins.executeQuery();
-		final var admins = new ArrayList<Employee>();
-		while(getAdminRes.next())
-		{
-			final var admin = new Employee(
-				getAdminRes.getInt("TA.id"),
-				getAdminRes.getString("first_name"),
-				getAdminRes.getString("last_name"),
-				getAdminRes.getString("birth_date"),
-				getAdminRes.getString("department"));
-			admins.add(admin);
-		}
-		getAdminRes.close();
-		return admins;
+		return makeTableModel(getAdminRes);
 	}
 
 	/**
@@ -802,23 +753,12 @@ public class Database
 	 * @return A list of students.
 	 * @throws SQLException
 	 */
-	public List<Student> listStudents() throws SQLException
+	public TableModel listStudents() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var getStudentsRes = this.selectStudents.executeQuery();
-		final var students = new ArrayList<Student>();
-		while(getStudentsRes.next())
-		{
-			final var student = new Student(
-				getStudentsRes.getInt("id"),
-				getStudentsRes.getString("first_name"),
-				getStudentsRes.getString("last_name"),
-				getStudentsRes.getString("birth_date"));
-			students.add(student);
-		}
-		getStudentsRes.close();
-		return students;
+		return makeTableModel(getStudentsRes);
 	}
 
 	/**
@@ -910,23 +850,12 @@ public class Database
 	 * @return A List of Classes
 	 * @throws SQLException
 	 */
-	public List<Class> listClasses() throws SQLException
+	public TableModel listClasses() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var selClassRes = this.selectClasses.executeQuery();
-		final var classes = new ArrayList<Class>();
-		while(selClassRes.next())
-		{
-			final var c = new Class(
-				selClassRes.getString("department"),
-				selClassRes.getInt("number"),
-				selClassRes.getInt("section"),
-				selClassRes.getInt("semester"),
-				selClassRes.getInt("year"));
-			classes.add(c);
-		}
-		return classes;
+		return makeTableModel(selClassRes);
 	}
 
 	/**
@@ -1179,27 +1108,13 @@ public class Database
 	 * @return
 	 * @throws SQLException
 	 */
-	public List<Assignment> listGradesForStudent(int studentID) throws SQLException
+	public TableModel listGradesForStudent(int studentID) throws SQLException
 	{
 		this.connection.rollback();
 
 		this.selectStudentAssignments.setInt(1, studentID);
 		final var selStuAssRes = this.selectStudentAssignments.executeQuery();
-		final var assignments = new ArrayList<Assignment>();
-		while(selStuAssRes.next())
-		{
-			final var assignment = new Assignment(
-				studentID,
-				selStuAssRes.getString("department"),
-				selStuAssRes.getInt("number"),
-				selStuAssRes.getInt("section"),
-				selStuAssRes.getInt("semester"),
-				selStuAssRes.getInt("year"),
-				selStuAssRes.getString("assignment"),
-				selStuAssRes.getInt("grade"));
-			assignments.add(assignment);
-		}
-		return assignments;
+		return makeTableModel(selStuAssRes);
 	}
 
 	/**
@@ -1212,7 +1127,7 @@ public class Database
 	 * @return
 	 * @throws SQLException
 	 */
-	public List<Assignment> listGradesForClass(
+	public TableModel listGradesForClass(
 		String department,
 		int number,
 		int section,
@@ -1227,22 +1142,7 @@ public class Database
 		this.selectClassAssignments.setInt(4, semester);
 		this.selectClassAssignments.setInt(5, year);
 		final var selClassAssRes = this.selectClassAssignments.executeQuery();
-		final var assignments = new ArrayList<Assignment>();
-		while(selClassAssRes.next())
-		{
-			final var assignment = new Assignment(
-				selClassAssRes.getInt("student_id"),
-				department,
-				number,
-				section,
-				semester,
-				year,
-				selClassAssRes.getString("assignment"),
-				selClassAssRes.getInt("grade"));
-			assignments.add(assignment);
-		}
-
-		return assignments;
+		return makeTableModel(selClassAssRes);
 	}
 
 	/**
@@ -1256,7 +1156,7 @@ public class Database
 	 * @return A List of Assignments
 	 * @throws SQLException
 	 */
-	public List<Assignment> listGradesForStudentInClass(
+	public TableModel listGradesForStudentInClass(
 		int studentID,
 		String department,
 		int number,
@@ -1272,22 +1172,7 @@ public class Database
 		this.selectStudentClassAssignments.setInt(1, classID);
 		this.selectStudentClassAssignments.setInt(2, studentID);
 		final var selClassStudAssRes = this.selectStudentClassAssignments.executeQuery();
-		final var assignments = new ArrayList<Assignment>();
-		while(selClassStudAssRes.next())
-		{
-			final var assignment = new Assignment(
-				studentID,
-				department,
-				number,
-				section,
-				semester,
-				year,
-				selClassStudAssRes.getString("assignment"),
-				selClassStudAssRes.getInt("grade"));
-			assignments.add(assignment);
-		}
-
-		return assignments;
+		return makeTableModel(selClassStudAssRes);
 	}
 
 	/**
