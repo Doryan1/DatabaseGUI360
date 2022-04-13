@@ -25,8 +25,7 @@ record Assignment(
 	int semester,
 	int year,
 	String assignment,
-	int grade
-){}
+	int grade){}
 
 /**
  * Class that handles connecting to and manipulating the database.
@@ -87,8 +86,8 @@ public class Database
 
 
 	/**
-	 * Create a database connection and set up the necessary procedures. Parameter is the
-	 * path to the database file relative to the CWD.
+	 * Create a database connection and set up the necessary procedures.
+	 * Parameter is the path to the database file relative to the CWD.
 	 * @param dbPath
 	 * @throws SQLException
 	 */
@@ -352,9 +351,10 @@ public class Database
 	}
 
 	/**
-	 * Performs a lookup for the given user ID and returns basic information about the
-	 * account as well as permissions. The returned optional will be present if the account exist.
-	 * Conversely, the optional will not be present if the account does not exist.
+	 * Performs a lookup for the given user ID and returns basic information
+	 * about the account as well as permissions. The returned optional will be
+	 * present if the account exist. Conversely, the optional will not be
+	 * present if the account does not exist.
 	 * @param id
 	 * @return 
 	 * @throws SQLException
@@ -408,7 +408,8 @@ public class Database
 	}
 
 	/**
-	 * Add a professor to the database. A professor by default is not assigned to any classes.
+	 * Add a professor to the database.
+	 * A professor by default is not assigned to any classes.
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -416,7 +417,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void addProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void addProfessor(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -470,7 +476,12 @@ public class Database
 	 * @return The professor's information before it was updated
 	 * @throws SQLException
 	 */
-	public Professor updateProfessor(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public Professor updateProfessor(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -551,7 +562,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void addTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void addTA(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -596,7 +612,8 @@ public class Database
 	}
 
 	/**
-	 * Updates a TA in the database with the given information. Account is based on the ID.
+	 * Updates a TA in the database with the given information.
+	 * Account is based on the ID.
 	 * @param id
 	 * @param firstName
 	 * @param lastName
@@ -604,7 +621,12 @@ public class Database
 	 * @param department
 	 * @throws SQLException
 	 */
-	public void updateTA(int id, String firstName, String lastName, String birthDate, String department) throws SQLException
+	public void updateTA(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate,
+		String department) throws SQLException
 	{
 		this.connection.rollback();
 		this.updatePerson.setInt(1, id);
@@ -727,7 +749,11 @@ public class Database
 	 * @param birthDate
 	 * @throws SQLException
 	 */
-	public void addStudent(int id, String firstName, String lastName, String birthDate) throws SQLException
+	public void addStudent(
+		int id,
+		String firstName,
+		String lastName,
+		String birthDate) throws SQLException
 	{
 		this.connection.rollback();
 		this.insertPerson.setInt(1, id);
@@ -810,7 +836,12 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addClass(String department, int number, int section, int semester, int year) throws SQLException
+	public void addClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -878,7 +909,12 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeClass(String department, int number, int section, int semester, int year) throws SQLException
+	public void removeClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -906,7 +942,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addProfessorToClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	public void addProfessorToClass(
+		int professorId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -935,7 +977,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeProfessorFromClass(int professorId, String department, int number, int section, int semester, int year) throws SQLException
+	public void removeProfessorFromClass(
+		int professorId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -963,7 +1011,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addTAToClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	public void addTAToClass(
+		int TAId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -992,7 +1046,13 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void removeTAFromClass(int TAId, String department, int number, int section, int semester, int year) throws SQLException
+	public void removeTAFromClass(
+		int TAId,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -1009,6 +1069,19 @@ public class Database
 		}
 		this.connection.commit();
 	}
+
+	/**
+	 * Add a grade for an student's assignment to a class
+	 * @param studentID
+	 * @param assignment
+	 * @param grade
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void addGrade(
 		int studentID,
 		String assignment,
@@ -1033,6 +1106,19 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Fetch the grade given for the specified assignment in the specified
+	 * class for the specified student.
+	 * @param studentID
+	 * @param assignment
+	 * @param department
+	 * @param number
+	 * @param year
+	 * @param semester
+	 * @param section
+	 * @return
+	 * @throws SQLException
+	 */
 	public int getGrade(
 		int studentID,
 		String assignment,
@@ -1058,6 +1144,12 @@ public class Database
 		return selAssRes.getInt("grade");
 	}
 
+	/**
+	 * Fetch every grade for every class for a specific student.
+	 * @param studentID
+	 * @return
+	 * @throws SQLException
+	 */
 	public List<Assignment> listGradesForStudent(int studentID) throws SQLException
 	{
 		this.connection.rollback();
@@ -1081,6 +1173,16 @@ public class Database
 		return assignments;
 	}
 
+	/**
+	 * Fetch every grade for every student in a given class.
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return
+	 * @throws SQLException
+	 */
 	public List<Assignment> listGradesForClass(
 		String department,
 		int number,
@@ -1114,6 +1216,17 @@ public class Database
 		return assignments;
 	}
 
+	/**
+	 * Fetch every grade a student has for the given class.
+	 * @param studentID
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return A List of Assignments
+	 * @throws SQLException
+	 */
 	public List<Assignment> listGradesForStudentInClass(
 		int studentID,
 		String department,
@@ -1147,6 +1260,19 @@ public class Database
 
 		return assignments;
 	}
+
+	/**
+	 * Updates a grade for an student's assignment in a class
+	 * @param studentID
+	 * @param assignment
+	 * @param grade
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @throws SQLException
+	 */
 	public void updateGrade(
 		int studentID,
 		String assignment,
@@ -1184,6 +1310,18 @@ public class Database
 		this.connection.commit();
 	}
 
+	/**
+	 * Deletes the given assignment from the given class for the given student.
+	 * @param studentID
+	 * @param assignment
+	 * @param department
+	 * @param number
+	 * @param section
+	 * @param semester
+	 * @param year
+	 * @return The grade of the removed assignment.
+	 * @throws SQLException
+	 */
 	public int removeGrade(
 		int studentID,
 		String assignment,
