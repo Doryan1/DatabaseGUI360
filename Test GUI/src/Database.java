@@ -2,10 +2,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 import java.util.Optional;
 import java.util.OptionalInt;
+
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 record LoginResult(
 	int id,
@@ -350,6 +355,29 @@ public class Database
 				RETURNING grade""");
 	}
 
+	private static TableModel makeTableModel(ResultSet rs) throws SQLException
+	{
+		final var meta = rs.getMetaData();
+		final var cCount = meta.getColumnCount();
+		final var columns = new Vector<String>(cCount);
+		for(int c = 1; c <= cCount; c +=1)
+		{
+			columns.add(meta.getColumnName(c));
+		}
+
+		final var data = new Vector<Vector<Object>>();
+		while(rs.next())
+		{
+			final var row = new Vector<Object>();
+			for(int c=1; c<=cCount; c+=1)
+			{
+				row.add(rs.getObject(c));
+			}
+			data.add(row);
+		}
+		return new DefaultTableModel(data, columns);
+	}
+
 	/**
 	 * Performs a lookup for the given user ID and returns basic information
 	 * about the account as well as permissions. The returned optional will be
@@ -446,24 +474,25 @@ public class Database
 	 * @return
 	 * @throws SQLException
 	 */
-	public List<Professor> listProfessors() throws SQLException
+	public TableModel listProfessors() throws SQLException
 	{
 		this.connection.rollback();
 
 		final var getProfsRes = this.selectProfessors.executeQuery();
-		final var profs = new ArrayList<Professor>();
-		while(getProfsRes.next())
-		{
-			final var prof = new Professor(
-				getProfsRes.getInt("PROFESSOR.id"),
-				getProfsRes.getString("first_name"),
-				getProfsRes.getString("last_name"),
-				getProfsRes.getString("birth_date"),
-				getProfsRes.getString("department"));
-			profs.add(prof);
-		}
-		getProfsRes.close();
-		return profs;
+		// final var profs = new ArrayList<Professor>();
+		// while(getProfsRes.next())
+		// {
+		// 	final var prof = new Professor(
+		// 		getProfsRes.getInt("PROFESSOR.id"),
+		// 		getProfsRes.getString("first_name"),
+		// 		getProfsRes.getString("last_name"),
+		// 		getProfsRes.getString("birth_date"),
+		// 		getProfsRes.getString("department"));
+		// 	profs.add(prof);
+		// }
+		// getProfsRes.close();
+		// return profs;
+		return makeTableModel(getProfsRes);
 	}
 
 	/**
