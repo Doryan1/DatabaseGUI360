@@ -1,14 +1,6 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Vector;
-import java.util.Optional;
-import java.util.OptionalInt;
-
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
+import java.sql.*;
+import java.util.*;
+import javax.swing.table.*;
 
 record LoginResult(
 	int id,
@@ -345,25 +337,54 @@ public class Database
 
 	private static TableModel makeTableModel(ResultSet rs) throws SQLException
 	{
+		// TODO: prettify column names
 		final var meta = rs.getMetaData();
 		final var cCount = meta.getColumnCount();
 		final var columns = new Vector<String>(cCount);
 		for(int c = 1; c <= cCount; c +=1)
 		{
 			columns.add(meta.getColumnName(c));
+			// Ugly hack to show letter grades Pt 1
+			if(meta.getColumnName(c) == "grade")
+			{
+				columns.add("Letter Grade");
+			}
 		}
 
 		final var data = new Vector<Vector<Object>>();
 		while(rs.next())
 		{
 			final var row = new Vector<Object>();
+
 			for(int c=1; c<=cCount; c+=1)
 			{
 				row.add(rs.getObject(c));
+				// Ugly hack to show letter grades Pt 2
+				if(columns.get(c) == "grade")
+				{
+					final var score = (int)rs.getObject(c);
+					row.add((Object)letterGrade(score));
+				}
 			}
 			data.add(row);
 		}
 		return new DefaultTableModel(data, columns);
+	}
+
+	private static char letterGrade(int score)
+	{
+		// If only java had pattern matching and ranges
+		if(score>=91) {
+			return 'A';
+		} else if (score<91 && score>=81) {
+			return 'B';
+		} else if (score<81 && score>=71) {
+			return 'C';
+		} else if (score<71 && score>=61) {
+			return 'D';
+		} else {
+			return 'F';
+		}
 	}
 
 	/**
