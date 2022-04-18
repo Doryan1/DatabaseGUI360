@@ -371,20 +371,26 @@ public class Database
 		return new DefaultTableModel(data, columns);
 	}
 
-	private static char letterGrade(int score)
+	private static String letterGrade(int score)
 	{
 		// If only java had pattern matching and ranges
-		if(score>=91) {
-			return 'A';
-		} else if (score<91 && score>=81) {
-			return 'B';
-		} else if (score<81 && score>=71) {
-			return 'C';
-		} else if (score<71 && score>=61) {
-			return 'D';
-		} else {
-			return 'F';
-		}
+        if(score>=90) {
+            return "A";
+        } else if (score<90 && score>=85) {
+            return "B+";
+        } else if (score<85 && score>=80) {
+            return "B";
+        } else if (score<80 && score>=75) {
+            return "C+";
+        } else if (score<75 && score>=70) {
+            return "C";
+        } else if (score<70 && score>=65) {
+            return "D+";
+        } else if (score<65 && score>=60) {
+            return "D";
+        } else {
+            return "F";
+        }
 	}
 
 	/**
