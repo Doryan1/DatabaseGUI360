@@ -2,6 +2,8 @@ import java.awt.event.* ;
 import java.sql.SQLException;
 import javax.swing.* ;
 
+import GUI.ProfessorGUI;
+
 //initial code from final project from another class
 public class startup implements ActionListener{
 	private static JLabel Userlabel;
@@ -83,6 +85,12 @@ public class startup implements ActionListener{
 				admin a = new admin() ;
 				a.ad();
 			}
+			//figure out the login codes for logging into the 4 other GUI's
+//			else if(acc.isStudent()) 
+//			{
+//				ProfessorGUI prof = new ProfessorGUI() ; 
+//				prof.run() ; 
+//			}
 			//after admin is set up this will be the place to add if statments for the rest of the main classes
 		} catch(SQLException ex) {
 			System.out.println(ex);
