@@ -18,6 +18,7 @@ public class StaffGUI extends JFrame {
 		try {
 			StaffGUI frame = new StaffGUI();
 			frame.setVisible(true);
+			frame.setTitle("Admin GUI");
 			frame.setLocationRelativeTo(null);
 		} catch (Exception e) {
 			e.printStackTrace();

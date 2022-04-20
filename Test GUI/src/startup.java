@@ -3,6 +3,9 @@ import java.sql.SQLException;
 import javax.swing.* ;
 
 import GUI.ProfessorGUI;
+import GUI.StaffGUI;
+import GUI.StudentGUI;
+import GUI.TAGUI;
 
 //initial code from final project from another class
 public class startup implements ActionListener{
@@ -86,11 +89,27 @@ public class startup implements ActionListener{
 				a.ad();
 			}
 			//figure out the login codes for logging into the 4 other GUI's
-//			else if(acc.isStudent()) 
-//			{
-//				ProfessorGUI prof = new ProfessorGUI() ; 
-//				prof.run() ; 
-//			}
+			else if(acc.isStudent()) 
+			{
+				StudentGUI stud = new StudentGUI() ; 
+				stud.run() ; 
+			}
+			else if(acc.isProfessor())
+			{
+				ProfessorGUI prof = new ProfessorGUI() ; 
+				prof.run() ; 
+			}
+			else if(acc.isTa())
+			{
+				TAGUI ta = new TAGUI() ; 
+				ta.run(); 
+			}
+			// this section is for isStaff to represent the staff of the database
+			else if(acc.isEmployee()) 
+			{
+				StaffGUI st = new StaffGUI() ; 
+				st.run(); 
+			}
 			//after admin is set up this will be the place to add if statments for the rest of the main classes
 		} catch(SQLException ex) {
 			System.out.println(ex);
