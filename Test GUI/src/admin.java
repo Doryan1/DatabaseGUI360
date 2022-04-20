@@ -96,6 +96,7 @@ public class admin implements ActionListener {
 				for(String c: cTeaching.split("\\s"))
 				{
 					String[] s = c.split("-");
+					if(s.length < 2) continue;
 					String classDept = s[0];
 					int course = Integer.parseInt(s[1]);
 					// XXX: Possibly add section, semestar, year info if needed.
@@ -111,6 +112,7 @@ public class admin implements ActionListener {
 				for(String c: cTaught.split("\\s"))
 				{
 					String[] s = c.split("-");
+					if(s.length < 2) continue;
 					String classDept = s[0];
 					int course = Integer.parseInt(s[1]);
 					// XXX: Possibly add section, semestar, year info if needed.

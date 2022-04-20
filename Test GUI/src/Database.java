@@ -234,9 +234,8 @@ public class Database
 
 		// Class
 		this.insertClass = this.connection.prepareStatement("""
-			INSERT INTO CLASS (department, number, section, semester, year)
-				VALUES (?, ?, ?, ?, ?)
-				RETURNING id;""");
+			INSERT OR IGNORE INTO CLASS (department, number, section, semester, year)
+				VALUES (?, ?, ?, ?, ?);""");
 		this.selectClassID = this.connection.prepareStatement("""
 			SELECT id
 				FROM CLASS
@@ -261,7 +260,7 @@ public class Database
 
 		// Professors and Classes
 		this.insertClassProfessor = this.connection.prepareStatement("""
-			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
+			INSERT OR IGNORE INTO CLASS_PROFESSOR (professor_id, class_id)
 				VALUES (?, ?);""");
 		this.deleteClassProfessor = this.connection.prepareStatement("""
 			DELETE FROM CLASS_PROFESSOR
@@ -271,7 +270,7 @@ public class Database
 
 		// TAs and Classes
 		this.insertClassTA = this.connection.prepareStatement("""
-			INSERT INTO CLASS_TA (ta_id, class_id)
+			INSERT OR IGNORE INTO CLASS_TA (ta_id, class_id)
 				VALUES (?, ?);""");
 		this.deleteClassTA = this.connection.prepareStatement("""
 			DELETE FROM CLASS_TA
@@ -368,6 +367,7 @@ public class Database
 			}
 			data.add(row);
 		}
+		rs.close();
 		return new DefaultTableModel(data, columns);
 	}
 
@@ -946,7 +946,7 @@ public class Database
 	 * @param year
 	 * @throws SQLException
 	 */
-	public void addClass(
+	public int addClass(
 		String department,
 		int number,
 		int section,
@@ -962,7 +962,8 @@ public class Database
 		this.insertClass.setInt(5, year);
 		this.insertClass.executeUpdate();
 
-		this.connection.commit();
+		return this.getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Failed to create class"));
 	}
 
 	private OptionalInt getClassID(
@@ -998,12 +999,10 @@ public class Database
 		this.insertClass.setInt(3, section);
 		this.insertClass.setInt(4, semester);
 		this.insertClass.setInt(5, year);
-		final var insClassRes = this.insertClass.executeQuery();
-		if(!insClassRes.next())
-		{
-			throw new SQLException("Failed to create class");
-		}
-		return insClassRes.getInt(1);
+		this.insertClass.executeUpdate();
+		
+		return this.getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Class does not exist"));
 	}
 
 	/**
