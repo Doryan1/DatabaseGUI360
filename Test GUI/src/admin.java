@@ -2,7 +2,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import javax.swing.*;
-import net.proteanit.sql.*;
 
 public class admin implements ActionListener {
 	private static JTable tableTA, tableStaff, tableprof;
@@ -21,11 +20,20 @@ public class admin implements ActionListener {
 	static PreparedStatement pst = null;
 	static ResultSet rs = null;
 
+	private Database db = null;
+
 	/**
 	 * @throws SQLException
 	 * @wbp.parser.entryPoint
 	 */
 	public void ad() {
+		// XXX: Admin really should have a proper constructor
+		try {
+			this.db = new Database("./project.db");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		System.out.println("init");
 		JFrame frame = new JFrame("Admin Manager");
 		JPanel panel = new JPanel();
 		panel.setBackground(new Color(0, 0, 0));
@@ -75,73 +83,96 @@ public class admin implements ActionListener {
 		JButton btnAddProf = new JButton("ADD");
 		btnAddProf.setBounds(515, 289, 89, 23);
 		adminprofpanel.add(btnAddProf);
-		btnAddProf.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					String query = " insert into Professor (id,department,fname,lname,dob,cteaching,ctaught,ta) values (?,?,?,?,?,?,?,?) ";
-					pst = connection.prepareStatement(query); // pst is called at the top as a static
-					pst.setString(1, txtIDProf.getText());
-					pst.setString(2, txtDepartmentProf.getText());
-					pst.setString(3, txtFNProf.getText());
-					pst.setString(4, txtLNProf.getText());
-					pst.setString(5, txtDOBProf.getText());
-					pst.setString(6, txtCTeachingProf.getText());
-					pst.setString(7, txtCTaughtProf.getText());
-					pst.setString(8, txtTAProf.getText());
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input saved");
-					UpdateProfessor();
-					pst.close();
-				} catch (Exception e1) {
-					JOptionPane.showMessageDialog(null, " ID must be unique,  Try Again Please ");
-					JOptionPane.showMessageDialog(null, e1);
+		btnAddProf.addActionListener(e->{
+			final int id = Integer.parseInt(this.txtIDProf.getText());
+			final String fName = this.txtFNProf.getText();
+			final String lName = this.txtLNProf.getText();
+			final String birthDate = this.txtDOBProf.getText();
+			final String department = this.txtDepartmentProf.getText();
+			final String cTeaching = this.txtCTeachingProf.getText();
+			final String cTaught = this.txtCTaughtProf.getText();
+			try {
+				db.addProfessor(id, fName, lName, birthDate, department);
+				for(String c: cTeaching.split("\\s"))
+				{
+					String[] s = c.split("-");
+					String classDept = s[0];
+					int course = Integer.parseInt(s[1]);
+					// XXX: Possibly add section, semestar, year info if needed.
+					db.addProfessorToClass(
+						id,
+						classDept,
+						course,
+						0,
+						0,
+						0);
 				}
+				// FIXME: currently no difference between teaching and taught classes
+				for(String c: cTaught.split("\\s"))
+				{
+					String[] s = c.split("-");
+					String classDept = s[0];
+					int course = Integer.parseInt(s[1]);
+					// XXX: Possibly add section, semestar, year info if needed.
+					db.addProfessorToClass(
+						id,
+						classDept,
+						course,
+						0,
+						0,
+						0);
+				}
+			} catch (SQLException ex) {
+				ex.printStackTrace();
 			}
 		});
 
 		JButton btnModifyProf = new JButton("Modify"); // This is the modify button for the Professor Manager
-		btnModifyProf.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					String value1 = txtIDProf.getText();
-					String value2 = txtDepartmentProf.getText();
-					String value3 = txtFNProf.getText();
-					String value4 = txtLNProf.getText();
-					String value5 = txtDOBProf.getText();
-					String value6 = txtCTaughtProf.getText();
-					String value7 = txtCTeachingProf.getText();
-					String value8 = txtTAProf.getText();
-					String query = "update Professor set id='" + value1 + "',department='" + value2 + "',fname = '"
-							+ value3 + "',lname='" + value4 + "',dob= '" + value5 + "',cteaching='" + value6
-							+ "',ctaught='" + value7 + "', TA='" + value8 + "' where id='" + value1 + "' ";
-					pst =connection.prepareStatement(query);
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input modified");
-					pst.close();
-					UpdateProfessor();
-				} catch (Exception e5) {
-					e5.printStackTrace();
-				}
+		btnModifyProf.addActionListener(e->{
+			final int id = Integer.parseInt(this.txtIDProf.getText());
+			final String fName = this.txtFNProf.getText();
+			final String lName = this.txtLNProf.getText();
+			final String birthDate = this.txtDOBProf.getText();
+			final String department = this.txtDepartmentProf.getText();
+			final String cTeaching = this.txtCTeachingProf.getText();
+			final String cTaught = this.txtCTaughtProf.getText();
+			try {
+				db.updateProfessor(id, fName, lName, birthDate, department);
+				// TODO: how should class updates be handled?
+			} catch (SQLException ex) {
+				ex.printStackTrace();
 			}
+			UpdateProfessor();
 		});
 		btnModifyProf.setBounds(614, 289, 89, 23);
 		adminprofpanel.add(btnModifyProf);
 
 		JButton btnDeleteProf = new JButton("Delete"); // This is the delete button for the Professor Manager
-		btnDeleteProf.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int row = tableprof.getSelectedRow();
-				String cell = tableprof.getModel().getValueAt(row, 0).toString();
-				String query = "DELETE FROM Professor where id= " + cell;
-				try {
-					PreparedStatement pst =connection.prepareStatement(query);
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input deleted");
-					UpdateProfessor();
-				} catch (Exception e4) {
-					e4.printStackTrace();
+		btnDeleteProf.addActionListener(e->{
+			final int id = Integer.parseInt(this.txtIDProf.getText());
+			try {
+				var classes = db.listProfessorClasses(id);
+				// Ugly, hideous, gut-wrenching hack
+				for(int i = 0; i < classes.getRowCount(); i+=1)
+				{
+					String department = (String)classes.getValueAt(i, 0);
+					int course = (int)classes.getValueAt(i, 1);
+					int section = (int)classes.getValueAt(i, 2);
+					int semester = (int)classes.getValueAt(i, 3);
+					int year = (int)classes.getValueAt(i, 4);
+					db.removeProfessorFromClass(
+						id,
+						department,
+						course,
+						section,
+						semester,
+						year);
 				}
+				db.removeProfessor(id);
+			} catch (SQLException ex) {
+				ex.printStackTrace();
 			}
+			UpdateProfessor();
 		});
 		btnDeleteProf.setBounds(713, 289, 89, 23);
 		adminprofpanel.add(btnDeleteProf);
@@ -599,34 +630,25 @@ public class admin implements ActionListener {
 		frame.setVisible(true);
 	}
 
-	protected static void UpdateProfessor() {
-		String query = "select *  from Professor";
+	protected void UpdateProfessor() {
 		try {
-			pst = connection.prepareStatement(query);
-			rs = pst.executeQuery();
-			tableprof.setModel(DbUtils.resultSetToTableModel(rs));
+			tableprof.setModel(db.listProfessors());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	protected static void UpdateTA() {
-		String query = "select *  from TA";
+	protected void UpdateTA() {
 		try {
-			pst = connection.prepareStatement(query);
-			rs = pst.executeQuery();
-			tableTA.setModel(DbUtils.resultSetToTableModel(rs));
+			tableTA.setModel(db.listTAs());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	protected static void UpdateStaff() {
-		String query = "select *  from staff";
+	protected void UpdateStaff() {
 		try {
-			pst = connection.prepareStatement(query);
-			rs = pst.executeQuery();
-			tableStaff.setModel(DbUtils.resultSetToTableModel(rs));
+			tableStaff.setModel(db.listStaff());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
