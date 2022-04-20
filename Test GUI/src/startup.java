@@ -74,6 +74,8 @@ public class startup implements ActionListener{
 		
 		try {
 			final var res = this.db.checkLogin(Integer.parseInt(user));
+			// Will cause lock contention later otherwise
+			this.db.close();
 			if(res.isEmpty())
 			{
 				//will tell the user to try again
@@ -112,7 +114,7 @@ public class startup implements ActionListener{
 			}
 			//after admin is set up this will be the place to add if statments for the rest of the main classes
 		} catch(SQLException ex) {
-			System.out.println(ex);
+			ex.printStackTrace();
 		}
 	}
 }
