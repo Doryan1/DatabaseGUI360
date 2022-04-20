@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import net.proteanit.sql.*;
 import java.awt.event.*;
+import java.awt.*;
 
 public class StudentGUI extends JFrame {
 	private static final long serialVersionUID = 8897923336313218109L;
@@ -15,6 +16,9 @@ public class StudentGUI extends JFrame {
 	private JTextField tFsearch;
 	private static JTable table;
 	static Connection connection=null ;
+	
+	//needs to connect to database just like admin
+
 	
 	public void run() throws SQLException { //Launch the application
 		try {
