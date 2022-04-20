@@ -59,9 +59,13 @@ public class Database
 	private final PreparedStatement deleteClass;
 
 	private final PreparedStatement insertClassProfessor;
+	private final PreparedStatement selectClassProfessor;
+	private final PreparedStatement updateClassProfessor;
 	private final PreparedStatement deleteClassProfessor;
-
+	
 	private final PreparedStatement insertClassTA;
+	private final PreparedStatement selectClassTA;
+	private final PreparedStatement updateClassTA;
 	private final PreparedStatement deleteClassTA;
 
 	private final PreparedStatement insertAssignment;
@@ -260,8 +264,21 @@ public class Database
 
 		// Professors and Classes
 		this.insertClassProfessor = this.connection.prepareStatement("""
-			INSERT OR IGNORE INTO CLASS_PROFESSOR (professor_id, class_id)
-				VALUES (?, ?);""");
+			INSERT OR IGNORE INTO CLASS_PROFESSOR (professor_id, class_id, active)
+				VALUES (?, ?, ?);""");
+		this.selectClassProfessor = this.connection.prepareStatement("""
+			SELECT active
+				FROM CLASS_PROFESSOR
+				WHERE 
+					professor_id = ?
+					AND class_id = ?;""");
+		this.updateClassProfessor = this.connection.prepareStatement("""
+			UPDATE CLASS_PROFESSOR
+				SET
+					active = ?
+				WHERE
+					professor_id = ?
+					AND class_id = ?;""");
 		this.deleteClassProfessor = this.connection.prepareStatement("""
 			DELETE FROM CLASS_PROFESSOR
 				WHERE
@@ -270,8 +287,21 @@ public class Database
 
 		// TAs and Classes
 		this.insertClassTA = this.connection.prepareStatement("""
-			INSERT OR IGNORE INTO CLASS_TA (ta_id, class_id)
-				VALUES (?, ?);""");
+			INSERT OR IGNORE INTO CLASS_TA (ta_id, class_id, active)
+				VALUES (?, ?, ?);""");
+		this.selectClassTA = this.connection.prepareStatement("""
+			SELECT active
+				FROM CLASS_TA
+				WHERE 
+					ta_id = ?
+					AND class_id = ?;""");
+		this.updateClassTA = this.connection.prepareStatement("""
+			UPDATE CLASS_TA
+				SET
+					active = ?
+				WHERE
+					ta_id = ?
+					AND class_id = ?;""");
 		this.deleteClassTA = this.connection.prepareStatement("""
 			DELETE FROM CLASS_TA
 				WHERE
@@ -1050,6 +1080,7 @@ public class Database
 	 * @param section
 	 * @param semester
 	 * @param year
+	 * @param active Is the professor currently teaching this class
 	 * @throws SQLException
 	 */
 	public void addProfessorToClass(
@@ -1058,7 +1089,8 @@ public class Database
 		int number,
 		int section,
 		int semester,
-		int year) throws SQLException
+		int year,
+		boolean active) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -1067,6 +1099,7 @@ public class Database
 
 		this.insertClassProfessor.setInt(1, professorId);
 		this.insertClassProfessor.setInt(2, classId);
+		this.insertClassProfessor.setInt(3, active? 1 : 0);
 		final var insClassProfRes = this.insertClassProfessor.executeUpdate();
 		if(insClassProfRes == 0)
 		{
@@ -1075,6 +1108,28 @@ public class Database
 
 		this.connection.commit();
 	}
+
+	public boolean isProfessorCurrentlyTeachingClass(int profID,
+	String department,
+	int number,
+	int section,
+	int semester,
+	int year) throws SQLException
+{
+	final var classId = this.getClassID(department, number, section, semester, year)
+		.orElseThrow(()->new SQLException("Class does not exist"));
+
+	this.selectClassProfessor.setInt(1, profID);
+	this.selectClassProfessor.setInt(2, classId);
+	final var selClassProfRes = this.selectClassProfessor.executeQuery();
+	if (!selClassProfRes.next())
+	{
+		return false;
+	}
+	final var answer = selClassProfRes.getInt("active") == 1;
+	selClassProfRes.close();
+	return answer;
+}
 
 	public TableModel listProfessorClasses(int professorID) throws SQLException
 	{
@@ -1125,6 +1180,7 @@ public class Database
 	 * @param section
 	 * @param semester
 	 * @param year
+	 * @param active Is the TA currently teaching this class
 	 * @throws SQLException
 	 */
 	public void addTAToClass(
@@ -1133,7 +1189,8 @@ public class Database
 		int number,
 		int section,
 		int semester,
-		int year) throws SQLException
+		int year,
+		boolean active) throws SQLException
 	{
 		this.connection.rollback();
 
@@ -1142,6 +1199,7 @@ public class Database
 
 		this.insertClassTA.setInt(1, TAId);
 		this.insertClassTA.setInt(2, classId);
+		this.insertClassTA.setInt(3, active? 1 : 0);
 		final var insClassTARes = this.insertClassTA.executeUpdate();
 		if(insClassTARes == 0)
 		{
@@ -1149,6 +1207,28 @@ public class Database
 		}
 
 		this.connection.commit();
+	}
+
+	public boolean isTACurrentlyTeachingClass(int taID,
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		final var classId = this.getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Class does not exist"));
+
+		this.selectClassTA.setInt(1, taID);
+		this.selectClassTA.setInt(2, classId);
+		final var selClassTARes = this.selectClassTA.executeQuery();
+		if (!selClassTARes.next())
+		{
+			return false;
+		}
+		final var answer = selClassTARes.getInt("active") == 1;
+		selClassTARes.close();
+		return answer;
 	}
 
 	public TableModel listTAClasses(int taID) throws SQLException
