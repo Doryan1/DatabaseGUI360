@@ -99,7 +99,7 @@ public class admin implements ActionListener {
 					if(s.length < 2) continue;
 					String classDept = s[0];
 					int course = Integer.parseInt(s[1]);
-					// XXX: Possibly add section, semestar, year info if needed.
+					// XXX: Possibly add section, semester, year info if needed.
 					db.addProfessorToClass(
 						id,
 						classDept,
@@ -116,7 +116,7 @@ public class admin implements ActionListener {
 					if(s.length < 2) continue;
 					String classDept = s[0];
 					int course = Integer.parseInt(s[1]);
-					// XXX: Possibly add section, semestar, year info if needed.
+					// XXX: Possibly add section, semester, year info if needed.
 					db.addProfessorToClass(
 						id,
 						classDept,
@@ -127,8 +127,11 @@ public class admin implements ActionListener {
 						false);
 				}
 			} catch (SQLException ex) {
+				JOptionPane.showMessageDialog(null,"ID is aken, please choose another") ;
 				ex.printStackTrace();
 			}
+			//added to update professor after it is selected
+			UpdateProfessor();
 		});
 
 		JButton btnModifyProf = new JButton("Modify"); // This is the modify button for the Professor Manager
@@ -298,6 +301,7 @@ public class admin implements ActionListener {
 		txtFNTA.setBounds(97, 103, 189, 38);
 		adminprofpanel_1.add(txtFNTA);
 
+		//TA Has not been updated yet. Only admin. This is on to do list
 		JButton btnAddTA = new JButton("ADD");
 		btnAddTA.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -534,6 +538,7 @@ public class admin implements ActionListener {
 		txtDepartmentStaff.setBounds(10, 376, 189, 38);
 		adminstaffpanel.add(txtDepartmentStaff);
 
+		//staff has not been updated, only admin atm . On to do list
 		JButton btnAddStaff = new JButton("ADD");
 		btnAddStaff.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -558,6 +563,7 @@ public class admin implements ActionListener {
 		btnAddStaff.setBounds(571, 48, 89, 23);
 		adminstaffpanel.add(btnAddStaff);
 
+		
 		JButton btnModifyStaff = new JButton("Modify");
 		btnModifyStaff.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
