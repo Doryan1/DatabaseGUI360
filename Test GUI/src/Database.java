@@ -276,15 +276,7 @@ public class Database
 			DELETE FROM CLASS_TA
 				WHERE
 					ta_id = ?
-					AND class_id IN(
-						SELECT id
-							FROM CLASS
-							WHERE
-								department = ?
-								AND number = ?
-								AND section = ?
-								AND semester = ?
-								AND year = ?);""");
+					AND class_id = ?;""");
 
 		// Assignments
 		this.insertAssignment = this.connection.prepareStatement("""
@@ -1187,12 +1179,10 @@ public class Database
 	{
 		this.connection.rollback();
 
+		final var classId = this.getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to remove TA from class, but class does not exist"));
 		this.deleteClassTA.setInt(1, TAId);
-		this.deleteClassTA.setString(2, department);
-		this.deleteClassTA.setInt(3, number);
-		this.deleteClassTA.setInt(4, section);
-		this.deleteClassTA.setInt(5, semester);
-		this.deleteClassTA.setInt(6, year);
+		this.deleteClassTA.setInt(2, classId);
 		final var delClassTARes = this.deleteClassTA.executeUpdate();
 		if(delClassTARes == 0)
 		{
