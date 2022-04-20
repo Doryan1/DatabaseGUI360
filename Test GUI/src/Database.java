@@ -39,11 +39,13 @@ public class Database
 	private final PreparedStatement insertProfessor;
 	private final PreparedStatement selectProfessor;
 	private final PreparedStatement selectProfessors;
+	private final PreparedStatement selectProfessorClasses;
 	private final PreparedStatement deleteProfessor;
 
 	private final PreparedStatement insertTA;
 	private final PreparedStatement selectTA;
 	private final PreparedStatement selectTAs;
+	private final PreparedStatement selectTAClasses;
 	private final PreparedStatement deleteTA;
 
 	private final PreparedStatement insertAdmin;
@@ -166,6 +168,13 @@ public class Database
 						ON PROFESSOR.id = EMPLOYEE.person_id
 					INNER JOIN PERSON
 						ON EMPLOYEE.person_id = PERSON.id""");
+		this.selectProfessorClasses = this.connection.prepareStatement("""
+			SELECT department, number, section, semester, year
+				FROM CLASS_PROFESSOR
+					INNER JOIN CLASS
+						ON CLASS_PROFESSOR.class_id = CLASS.id
+				WHERE
+					professor_id = ?;""");
 		this.deleteProfessor = this.connection.prepareStatement("""
 			DELETE FROM PROFESSOR
 				WHERE id = ?""");
@@ -189,6 +198,13 @@ public class Database
 						ON TA.id = EMPLOYEE.person_id
 					INNER JOIN PERSON
 						ON EMPLOYEE.person_id = PERSON.id""");
+		this.selectTAClasses = this.connection.prepareStatement("""
+			SELECT department, number, section, semester, year
+				FROM CLASS_TA
+					INNER JOIN CLASS
+						ON CLASS_TA.class_id = CLASS.id
+				WHERE
+					ta_id = ?;""");
 		this.deleteTA = this.connection.prepareStatement("""
 			DELETE FROM TA
 				WHERE id = ?""");
@@ -246,39 +262,17 @@ public class Database
 		// Professors and Classes
 		this.insertClassProfessor = this.connection.prepareStatement("""
 			INSERT INTO CLASS_PROFESSOR (professor_id, class_id)
-				SELECT ?, id
-					FROM CLASS
-						WHERE
-							department = ?
-							AND number = ?
-							AND section = ?
-							AND semester = ?
-							AND year = ?;""");
+				VALUES (?, ?);""");
 		this.deleteClassProfessor = this.connection.prepareStatement("""
 			DELETE FROM CLASS_PROFESSOR
 				WHERE
 					professor_id = ?
-					AND class_id IN(
-						SELECT id
-							FROM CLASS
-							WHERE
-								department = ?
-								AND number = ?
-								AND section = ?
-								AND semester = ?
-								AND year = ?);""");
+					AND class_id = ?;""");
 
 		// TAs and Classes
 		this.insertClassTA = this.connection.prepareStatement("""
 			INSERT INTO CLASS_TA (ta_id, class_id)
-				SELECT ?, id
-					FROM CLASS
-						WHERE
-							department = ?
-							AND number = ?
-							AND section = ?
-							AND semester = ?
-							AND year = ?;""");
+				VALUES (?, ?);""");
 		this.deleteClassTA = this.connection.prepareStatement("""
 			DELETE FROM CLASS_TA
 				WHERE
@@ -992,6 +986,26 @@ public class Database
 		return OptionalInt.of(classID);
 	}
 
+	private int insertClass(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+	{
+		this.insertClass.setString(1, department);
+		this.insertClass.setInt(2, number);
+		this.insertClass.setInt(3, section);
+		this.insertClass.setInt(4, semester);
+		this.insertClass.setInt(5, year);
+		final var insClassRes = this.insertClass.executeQuery();
+		if(!insClassRes.next())
+		{
+			throw new SQLException("Failed to create class");
+		}
+		return insClassRes.getInt(1);
+	}
+
 	/**
 	 * Lists every class currently in the database.
 	 * @return A List of Classes
@@ -1057,12 +1071,11 @@ public class Database
 	{
 		this.connection.rollback();
 
+		final var classId = this.getClassID(department, number, section, semester, year)
+			.orElse(this.insertClass(department, number, section, semester, year));
+
 		this.insertClassProfessor.setInt(1, professorId);
-		this.insertClassProfessor.setString(2, department);
-		this.insertClassProfessor.setInt(3, number);
-		this.insertClassProfessor.setInt(4, section);
-		this.insertClassProfessor.setInt(5, semester);
-		this.insertClassProfessor.setInt(6, year);
+		this.insertClassProfessor.setInt(2, classId);
 		final var insClassProfRes = this.insertClassProfessor.executeUpdate();
 		if(insClassProfRes == 0)
 		{
@@ -1070,6 +1083,14 @@ public class Database
 		}
 
 		this.connection.commit();
+	}
+
+	public TableModel listProfessorClasses(int professorID) throws SQLException
+	{
+		this.connection.rollback();
+		this.selectProfessorClasses.setInt(1, professorID);
+		final var selProfClassRes = this.selectProfessorClasses.executeQuery();
+		return makeTableModel(selProfClassRes);
 	}
 
 	/**
@@ -1092,12 +1113,11 @@ public class Database
 	{
 		this.connection.rollback();
 
+		final var classId = this.getClassID(department, number, section, semester, year)
+			.orElseThrow(()->new SQLException("Tried to remove professor from class, but class does not exist"));
+
 		this.deleteClassProfessor.setInt(1, professorId);
-		this.deleteClassProfessor.setString(2, department);
-		this.deleteClassProfessor.setInt(3, number);
-		this.deleteClassProfessor.setInt(4, section);
-		this.deleteClassProfessor.setInt(5, semester);
-		this.deleteClassProfessor.setInt(6, year);
+		this.deleteClassProfessor.setInt(2, classId);
 		final var delClassProfRes = this.deleteClassProfessor.executeUpdate();
 		if(delClassProfRes == 0)
 		{
@@ -1126,12 +1146,11 @@ public class Database
 	{
 		this.connection.rollback();
 
+		final var classId = this.getClassID(department, number, section, semester, year)
+			.orElse(this.insertClass(department, number, section, semester, year));
+
 		this.insertClassTA.setInt(1, TAId);
-		this.insertClassTA.setString(2, department);
-		this.insertClassTA.setInt(3, number);
-		this.insertClassTA.setInt(4, section);
-		this.insertClassTA.setInt(5, semester);
-		this.insertClassTA.setInt(6, year);
+		this.insertClassTA.setInt(2, classId);
 		final var insClassTARes = this.insertClassTA.executeUpdate();
 		if(insClassTARes == 0)
 		{
@@ -1139,6 +1158,14 @@ public class Database
 		}
 
 		this.connection.commit();
+	}
+
+	public TableModel listTAClasses(int taID) throws SQLException
+	{
+		this.connection.rollback();
+		this.selectTAClasses.setInt(1, taID);
+		final var selTAClassRes = this.selectTAClasses.executeQuery();
+		return makeTableModel(selTAClassRes);
 	}
 
 	/**
