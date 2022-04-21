@@ -21,6 +21,14 @@ public class admin implements ActionListener {
 	static ResultSet rs = null;
 
 	private Database db = null;
+	private JTextField tfIDstudent;
+	private JTextField tfFNstudent;
+	private JTextField tfLNstudent;
+	private JTextField tfDOBstudent;
+	private JTextField tfCoursestudent;
+	private JTextField tfSemesterstudent;
+	private JTextField tfNumgradestudent;
+	private JTable tablestudent;
 
 	/**
 	 * @throws SQLException
@@ -48,7 +56,7 @@ public class admin implements ActionListener {
 		panel.add(tabbedPane);
 
 		adminprofpanel = new JPanel();
-		adminprofpanel.setBackground(new Color(255, 255, 255));
+		adminprofpanel.setBackground(SystemColor.inactiveCaption);
 		tabbedPane.addTab("Professor Manager", null, adminprofpanel, null);
 		adminprofpanel.setLayout(null);
 
@@ -279,7 +287,7 @@ public class admin implements ActionListener {
 
 		JPanel adminprofpanel_1 = new JPanel();
 		adminprofpanel_1.setLayout(null);
-		adminprofpanel_1.setBackground(Color.CYAN);
+		adminprofpanel_1.setBackground(SystemColor.activeCaption);
 		adminprofpanel_1.setBounds(0, 0, 879, 511);
 		admintapanel.add(adminprofpanel_1);
 
@@ -469,7 +477,7 @@ public class admin implements ActionListener {
 		adminstaffpanel.setLayout(null);
 
 		lblThisIsFor = new JLabel("This is for staff");
-		lblThisIsFor.setBounds(10, -2, 198, 14);
+		lblThisIsFor.setBounds(766, 11, 198, 14);
 		adminstaffpanel.add(lblThisIsFor);
 
 		JButton exitStaff = new JButton("EXIT");
@@ -621,18 +629,140 @@ public class admin implements ActionListener {
 		adminstaffpanel.add(btnUpdateStaff);
 
 		adminstudentpanel = new JPanel();
+		adminstudentpanel.setToolTipText("IDs need to start with 2");
 		adminstudentpanel.setBackground(new Color(240, 255, 255));
 		tabbedPane.addTab("Student Manager", null, adminstudentpanel, null);
 		adminstudentpanel.setLayout(null);
 
 		lblThisIsFor_1 = new JLabel("This is for student");
-		lblThisIsFor_1.setBounds(75, 96, 198, 14);
+		lblThisIsFor_1.setBounds(742, 0, 198, 14);
 		adminstudentpanel.add(lblThisIsFor_1);
 
-		JButton exit3 = new JButton("EXIT");
-		exit3.setBounds(790, 488, 89, 23);
-		adminstudentpanel.add(exit3);
-		exit3.addActionListener(new ActionListener() {
+		JButton btnExitStudent = new JButton("EXIT");
+		btnExitStudent.setBounds(790, 488, 89, 23);
+		adminstudentpanel.add(btnExitStudent);
+		
+		tfIDstudent = new JTextField();
+		tfIDstudent.setToolTipText("students need to start with the number 2");
+		tfIDstudent.setColumns(10);
+		tfIDstudent.setBounds(10, 37, 189, 38);
+		adminstudentpanel.add(tfIDstudent);
+		
+		tfFNstudent = new JTextField();
+		tfFNstudent.setColumns(10);
+		tfFNstudent.setBounds(10, 107, 189, 38);
+		adminstudentpanel.add(tfFNstudent);
+		
+		tfLNstudent = new JTextField();
+		tfLNstudent.setColumns(10);
+		tfLNstudent.setBounds(10, 168, 189, 38);
+		adminstudentpanel.add(tfLNstudent);
+		
+		tfDOBstudent = new JTextField();
+		tfDOBstudent.setColumns(10);
+		tfDOBstudent.setBounds(10, 231, 189, 38);
+		adminstudentpanel.add(tfDOBstudent);
+		
+		tfCoursestudent = new JTextField();
+		tfCoursestudent.setColumns(10);
+		tfCoursestudent.setBounds(10, 389, 189, 38);
+		adminstudentpanel.add(tfCoursestudent);
+		
+		tfSemesterstudent = new JTextField();
+		tfSemesterstudent.setColumns(10);
+		tfSemesterstudent.setBounds(10, 450, 189, 38);
+		adminstudentpanel.add(tfSemesterstudent);
+		
+		tfNumgradestudent = new JTextField();
+		tfNumgradestudent.setColumns(10);
+		tfNumgradestudent.setBounds(10, 329, 189, 38);
+		adminstudentpanel.add(tfNumgradestudent);
+		
+		JScrollPane scrollPane_3 = new JScrollPane();
+		scrollPane_3.setBounds(249, 48, 621, 429);
+		adminstudentpanel.add(scrollPane_3);
+		
+		tablestudent = new JTable();
+		scrollPane_3.setViewportView(tablestudent);
+		
+		JButton btnUpdateStudent = new JButton("Update Table");
+		btnUpdateStudent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnUpdateStudent.setBounds(248, 23, 151, 23);
+		adminstudentpanel.add(btnUpdateStudent);
+		
+		JButton btnAddStaff_1 = new JButton("ADD");
+		btnAddStaff_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnAddStaff_1.setBounds(570, 23, 89, 23);
+		adminstudentpanel.add(btnAddStaff_1);
+		
+		JButton btnModifyStudent = new JButton("Modify");
+		btnModifyStudent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnModifyStudent.setBounds(669, 23, 89, 23);
+		adminstudentpanel.add(btnModifyStudent);
+		
+		JButton btnDeleteStudent = new JButton("Delete");
+		btnDeleteStudent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnDeleteStudent.setBounds(781, 23, 89, 23);
+		adminstudentpanel.add(btnDeleteStudent);
+		
+		JLabel lblIDstudent = new JLabel("ID");
+		lblIDstudent.setBounds(10, 23, 48, 14);
+		adminstudentpanel.add(lblIDstudent);
+		
+		JLabel lblFirstName = new JLabel("First Name");
+		lblFirstName.setBounds(10, 86, 89, 14);
+		adminstudentpanel.add(lblFirstName);
+		
+		JLabel lblNewLabel_1_1 = new JLabel("Last Name");
+		lblNewLabel_1_1.setBounds(10, 153, 118, 14);
+		adminstudentpanel.add(lblNewLabel_1_1);
+		
+		JLabel lblNewLabel_1_2 = new JLabel("DOB");
+		lblNewLabel_1_2.setBounds(10, 216, 48, 14);
+		adminstudentpanel.add(lblNewLabel_1_2);
+		
+		JButton btnMainMenu = new JButton("Main Menu");
+		btnMainMenu.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnMainMenu.setBounds(691, 488, 89, 23);
+		adminstudentpanel.add(btnMainMenu);
+		
+		JLabel lblNewLabel_1_2_1 = new JLabel("Course");
+		lblNewLabel_1_2_1.setBounds(10, 316, 89, 14);
+		adminstudentpanel.add(lblNewLabel_1_2_1);
+		
+		JLabel lblNewLabel_1_2_2 = new JLabel("Semester");
+		lblNewLabel_1_2_2.setBounds(10, 375, 89, 14);
+		adminstudentpanel.add(lblNewLabel_1_2_2);
+		
+		JLabel lblNewLabel_1_2_3 = new JLabel("Numerical Grade");
+		lblNewLabel_1_2_3.setBounds(10, 438, 89, 14);
+		adminstudentpanel.add(lblNewLabel_1_2_3);
+		
+		JLabel lblNewLabel = new JLabel("Enter Student Grades Here ");
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel.setBounds(20, 280, 189, 14);
+		adminstudentpanel.add(lblNewLabel);
+		
+		JLabel lblNewLabel_1 = new JLabel("Please Enter One Class at a time");
+		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblNewLabel_1.setBounds(10, 294, 229, 14);
+		adminstudentpanel.add(lblNewLabel_1);
+		btnExitStudent.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.exit(0);
 			}
