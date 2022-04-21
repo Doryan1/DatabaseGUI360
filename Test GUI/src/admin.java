@@ -106,7 +106,8 @@ public class admin implements ActionListener {
 						course,
 						0,
 						0,
-						0);
+						0,
+						true);
 				}
 				// FIXME: currently no difference between teaching and taught classes
 				for(String c: cTaught.split("\\s"))
@@ -122,7 +123,8 @@ public class admin implements ActionListener {
 						course,
 						0,
 						0,
-						0);
+						0,
+						false);
 				}
 			} catch (SQLException ex) {
 				JOptionPane.showMessageDialog(null,"ID is aken, please choose another") ;
