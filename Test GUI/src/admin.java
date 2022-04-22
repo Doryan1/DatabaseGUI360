@@ -3,6 +3,8 @@ import java.awt.event.*;
 import java.sql.*;
 import javax.swing.*;
 
+import Database.Database;
+
 public class admin implements ActionListener {
 	private static JTable tableTA, tableStaff, tableprof;
 	private JTextField txtFNProf, txtIDProf, txtLNProf, txtDOBProf, txtCTeachingProf, txtCTaughtProf, txtDepartmentProf, txtTAProf;
