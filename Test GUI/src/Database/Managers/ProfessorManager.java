@@ -10,7 +10,7 @@ public class ProfessorManager
 	private final PreparedStatement selectProfessor;
 	private final PreparedStatement selectProfessors;
 	private final PreparedStatement deleteProfessor;
-	
+
 	public ProfessorManager(Connection connection) throws SQLException
 	{
 		this.insertProfessor = connection.prepareStatement("""
@@ -31,7 +31,7 @@ public class ProfessorManager
 						ON PROFESSOR.id = EMPLOYEE.person_id
 					INNER JOIN PERSON
 						ON EMPLOYEE.person_id = PERSON.id""");
-		
+
 		this.deleteProfessor = connection.prepareStatement("""
 			DELETE FROM PROFESSOR
 				WHERE id = ?""");

@@ -48,36 +48,16 @@ public class Database
 		//allows the setup of a form connection
 		//this will also allow to present all the data on the form when searching
 
-		// Person
 		this.pm = new PersonManager(connection);
-
-		// Student
 		this.sm = new StudentManager(connection);
-
-		// Employee
 		this.em = new EmployeeManager(connection);
-
-		// Professor
 		this.prm = new ProfessorManager(connection);
-
-		// TA
 		this.tam = new TAManager(connection);
-
-		// Admin
 		this.am = new AdminManager(connection);
-
-		// Class
 		this.cm = new ClassManager(connection);
-
-		// Professors and Classes
 		this.cpm = new ClassProfessorManager(connection);
-		
-		// TAs and Classes
 		this.ctm = new ClassTAManager(connection);
-		
-		// Assignments
 		this.asm = new AssignmentManager(connection);
-		
 	}
 
 	private static TableModel makeTableModel(List<HashMap<String, Object>> objects) throws SQLException
@@ -440,7 +420,7 @@ public class Database
 	{
 		this.connection.rollback();
 
-		
+
 		final var old = this.sm.selectStudent(id)
 			.orElseThrow(()->new SQLException("Tried to remove student, but student does not exist"));
 		this.sm.deleteStudent(id);
@@ -479,7 +459,7 @@ public class Database
 		int year) throws SQLException
 	{
 		this.cm.insertClass(department, number, section, semester, year);
-		
+
 		return this.cm.selectClassID(department, number, section, semester, year)
 			.orElseThrow(()->new SQLException("Class does not exist"));
 	}
@@ -888,7 +868,7 @@ public class Database
 
 		final int classID = this.cm.selectClassID(department, number, section, semester, year)
 			.orElseThrow(()->new SQLException("Tried to remove grade from class, but class does not exist"));
-		
+
 		final int grade = this.asm.selectAssignment(classID, studentID, assignment)
 			.orElseThrow(()->new SQLException("Tried to remove grade from class, but assignment does not exist"));
 		if(this.asm.deleteAssignment(classID, studentID, assignment) == 0)

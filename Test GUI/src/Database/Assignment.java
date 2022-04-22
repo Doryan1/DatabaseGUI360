@@ -12,13 +12,13 @@ public class Assignment
 	int grade;
 
 	public Assignment(
-		int studentID, 
-		String department, 
-		int number, 
-		int section, 
-		int semester, 
+		int studentID,
+		String department,
+		int number,
+		int section,
+		int semester,
 		int year,
-		String assignment, 
+		String assignment,
 		int grade)
 	{
 		this.studentID = studentID;
