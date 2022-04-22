@@ -139,7 +139,7 @@ public class Database
 	{
 		this.connection.rollback();
 		this.pm.insertPerson(id, fName, lName, bDate);
-		this.em.insertEmployee(id);
+		this.em.insertEmployee(id, dept);
 		this.connection.commit();
 	}
 
@@ -387,7 +387,7 @@ public class Database
 	{
 		this.connection.rollback();
 		this.pm.insertPerson(id, fName, lName, bDate);
-		this.em.insertEmployee(id);
+		this.em.insertEmployee(id, dept);
 		this.tam.insertTA(id);
 		this.connection.commit();
 	}
