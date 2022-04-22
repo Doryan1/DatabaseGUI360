@@ -67,6 +67,22 @@ public class ClassManager
 		}
 	}
 
+	public int selectOrInsertClassID(
+		String department,
+		int number,
+		int section,
+		int semester,
+		int year) throws SQLException
+		{
+			var maybeID = this.selectClassID(department, number, section, semester, year);
+			if (maybeID.isEmpty())
+			{
+				this.insertClass(department, number, section, semester, year);
+				maybeID = this.selectClassID(department, number, section, semester, year);
+			}
+			return maybeID.getAsInt();
+		}
+
 	public List<HashMap<String, Object>> selectClasses() throws SQLException
 	{
 		var classes = new ArrayList<HashMap<String, Object>>();
