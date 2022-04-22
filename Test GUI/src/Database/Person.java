@@ -1,3 +1,4 @@
+package Database;
 public class Person {
 	private final int id;
 	private String firstName;

@@ -1,3 +1,4 @@
+package Database;
 public class Employee extends Person
 {
 	private String department;

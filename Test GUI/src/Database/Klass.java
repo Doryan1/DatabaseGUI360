@@ -1,4 +1,5 @@
-public class Class
+package Database;
+public class Klass
 {
 	String department;
 	int number;
@@ -6,7 +7,7 @@ public class Class
 	int semester;
 	int year;
 
-	Class(String department, int number, int section, int semester, int year)
+	public Klass(String department, int number, int section, int semester, int year)
 	{
 		this.department = department;
 		this.number = number;
