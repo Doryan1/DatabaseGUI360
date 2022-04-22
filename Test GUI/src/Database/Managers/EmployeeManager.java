@@ -37,9 +37,10 @@ public class EmployeeManager
 				WHERE person_id = ?""");
 	}
 
-	public int insertEmployee(int id) throws SQLException
+	public int insertEmployee(int id, String dept) throws SQLException
 	{
 		this.insertEmployee.setInt(1, id);
+		this.insertEmployee.setString(2, dept);
 		return this.insertEmployee.executeUpdate();
 	}
 
