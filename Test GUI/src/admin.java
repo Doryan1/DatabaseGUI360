@@ -102,40 +102,7 @@ public class admin implements ActionListener {
 			final String cTeaching = this.txtCTeachingProf.getText();
 			final String cTaught = this.txtCTaughtProf.getText();
 			try {
-				db.addProfessor(id, fName, lName, birthDate, department);
-				for(String c: cTeaching.split("\\s"))
-				{
-					String[] s = c.split("-");
-					if(s.length < 2) continue;
-					String classDept = s[0];
-					int course = Integer.parseInt(s[1]);
-					// XXX: Possibly add section, semester, year info if needed.
-					db.addProfessorToClass(
-						id,
-						classDept,
-						course,
-						0,
-						0,
-						0,
-						true);
-				}
-				// FIXME: currently no difference between teaching and taught classes
-				for(String c: cTaught.split("\\s"))
-				{
-					String[] s = c.split("-");
-					if(s.length < 2) continue;
-					String classDept = s[0];
-					int course = Integer.parseInt(s[1]);
-					// XXX: Possibly add section, semester, year info if needed.
-					db.addProfessorToClass(
-						id,
-						classDept,
-						course,
-						0,
-						0,
-						0,
-						false);
-				}
+				db.addProfessor(id, fName, lName, birthDate, department, cTeaching, cTaught);
 			} catch (SQLException ex) {
 				JOptionPane.showMessageDialog(null,"ID is aken, please choose another") ;
 				ex.printStackTrace();
@@ -154,7 +121,7 @@ public class admin implements ActionListener {
 			final String cTeaching = this.txtCTeachingProf.getText();
 			final String cTaught = this.txtCTaughtProf.getText();
 			try {
-				db.updateProfessor(id, fName, lName, birthDate, department);
+				db.updateProfessor(id, fName, lName, birthDate, department, cTeaching, cTaught);
 				// TODO: how should class updates be handled?
 			} catch (SQLException ex) {
 				ex.printStackTrace();
@@ -168,23 +135,6 @@ public class admin implements ActionListener {
 		btnDeleteProf.addActionListener(e->{
 			final int id = Integer.parseInt(this.txtIDProf.getText());
 			try {
-				var classes = db.listProfessorClasses(id);
-				// Ugly, hideous, gut-wrenching hack
-				for(int i = 0; i < classes.getRowCount(); i+=1)
-				{
-					String department = (String)classes.getValueAt(i, 0);
-					int course = (int)classes.getValueAt(i, 1);
-					int section = (int)classes.getValueAt(i, 2);
-					int semester = (int)classes.getValueAt(i, 3);
-					int year = (int)classes.getValueAt(i, 4);
-					db.removeProfessorFromClass(
-						id,
-						department,
-						course,
-						section,
-						semester,
-						year);
-				}
 				db.removeProfessor(id);
 			} catch (SQLException ex) {
 				ex.printStackTrace();

@@ -193,12 +193,32 @@ public class Database
 		String fName,
 		String lName,
 		String bDate,
-		String dept) throws SQLException
+		String dept,
+		String teaching,
+		String taught) throws SQLException
 	{
 		this.connection.rollback();
 		this.pm.insertPerson(id, fName, lName, bDate);
-		this.em.insertEmployee(id);
+		this.em.insertEmployee(id, dept);
 		this.prm.insertProfessor(id);
+		for(String c: teaching.split("\\s"))
+		{
+			String[] s = c.split("-");
+			if(s.length < 2) continue;
+			String classDept = s[0];
+			int course = Integer.parseInt(s[1]);
+			final var classID = this.cm.selectOrInsertClassID(classDept, course, 0, 0, 0);
+			this.cpm.insertClassProfessor(id, classID, true);
+		}
+		for(String c: taught.split("\\s"))
+		{
+			String[] s = c.split("-");
+			if(s.length < 2) continue;
+			String classDept = s[0];
+			int course = Integer.parseInt(s[1]);
+			final var classID = this.cm.selectOrInsertClassID(classDept, course, 0, 0, 0);
+			this.cpm.insertClassProfessor(id, classID, false);
+		}
 		this.connection.commit();
 	}
 
@@ -344,6 +364,17 @@ public class Database
 		this.connection.rollback();
 		final var old = this.prm.selectProfessor(id)
 			.orElseThrow(()->new SQLException("Tried to remove professor, but professor does not exist"));
+		for(var klass: this.cpm.selectProfessorClasses(id))
+		{
+			var classID = this.cm.selectClassID(
+				(String)klass.get("Department"),
+				(int)klass.get("Course Number"),
+				(int)klass.get("Course Section"),
+				(int)klass.get("Semester"),
+				(int)klass.get("Year"))
+				.orElse(-1);
+			this.cpm.deleteClassProfessor(id, classID);
+		}
 		this.prm.deleteProfessor(id);
 		this.em.deleteEmployee(id);
 		this.pm.deletePerson(id);
