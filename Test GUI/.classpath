@@ -12,6 +12,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.36.0.3.jar"/>
-	<classpathentry kind="lib" path="C:/Users/PC/OneDrive/Documents/GitHub/DatabaseGUI360/rs2xml.jar"/>
+	<classpathentry kind="lib" path="C:/Users/dorya/Documents/GitHub/DatabaseGUI360/rs2xml.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
