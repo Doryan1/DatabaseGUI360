@@ -62,7 +62,7 @@ public class PersonManager
 		this.updatePerson.setString(2, lName);
 		this.updatePerson.setString(3, bDate);
 		this.updatePerson.setInt(4, id);
-		return this.selectPerson.executeUpdate();
+		return this.updatePerson.executeUpdate();
 	}
 
 	public int deletePerson(int id) throws SQLException

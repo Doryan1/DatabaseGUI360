@@ -84,14 +84,16 @@ public class ClassTAManager
 		return this.deleteClassTA.executeUpdate();
 	}
 
-	public List<HashMap<String, Object>> selectTAClasses(int profID) throws SQLException
+	public List<HashMap<String, Object>> selectTAClasses(int TAID) throws SQLException
 	{
+		this.selectTAClasses.setInt(1, TAID);
 		var classes = new ArrayList<HashMap<String, Object>>();
 		try (var res = this.selectTAClasses.executeQuery())
 		{
 			while (res.next())
 			{
 				final var klass = new HashMap<String, Object>();
+				klass.put("Actively Teaching", res.getInt("active") == 1);
 				klass.put("Department", res.getString("department"));
 				klass.put("Course Number", res.getInt("number"));
 				klass.put("Course Section", res.getInt("section"));

@@ -34,7 +34,7 @@ public class ClassProfessorManager
 					professor_id = ?
 					AND class_id = ?;""");
 		this.selectProfessorClasses = connection.prepareStatement("""
-			SELECT department, number, section, semester, year
+			SELECT active, department, number, section, semester, year
 				FROM CLASS_PROFESSOR
 					INNER JOIN CLASS
 						ON CLASS_PROFESSOR.class_id = CLASS.id
@@ -86,12 +86,14 @@ public class ClassProfessorManager
 
 	public List<HashMap<String, Object>> selectProfessorClasses(int profID) throws SQLException
 	{
+		this.selectProfessorClasses.setInt(1, profID);
 		var classes = new ArrayList<HashMap<String, Object>>();
 		try (var res = this.selectProfessorClasses.executeQuery())
 		{
 			while (res.next())
 			{
 				final var klass = new HashMap<String, Object>();
+				klass.put("Actively Teaching", res.getInt("active") == 1);
 				klass.put("Department", res.getString("department"));
 				klass.put("Course Number", res.getInt("number"));
 				klass.put("Course Section", res.getInt("section"));
