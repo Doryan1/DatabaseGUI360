@@ -2,6 +2,7 @@ import java.awt.event.* ;
 import java.sql.SQLException;
 import javax.swing.* ;
 
+import Database.Database;
 import GUI.ProfessorGUI;
 import GUI.StaffGUI;
 import GUI.StudentGUI;
