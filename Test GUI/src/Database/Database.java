@@ -212,7 +212,42 @@ public class Database
 		this.connection.rollback();
 
 		final var professors = this.prm.selectProfessors();
+		for(var professor: professors)
+		{
+			final var courses = this.cpm
+				.selectProfessorClasses((int)professor.get("Professor ID"));
+			final var teaching = courses
+				.stream()
+				.filter(c->(boolean)c.get("Actively Teaching"))
+				.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+				.toList();
+			professor.put("Teaching", String.join(" ", teaching));
+			final var taught = courses
+			.stream()
+			.filter(c->!(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
+			professor.put("Taught", String.join(" ", taught));
+		}
 		return makeTableModel(professors);
+	}
+
+	private List<String> getProfessorTeaching(int profID) throws SQLException
+	{
+		return this.cpm.selectProfessorClasses(profID)
+			.stream()
+			.filter(c->(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
+	}
+
+	private List<String> getProfessorTaught(int profID) throws SQLException
+	{
+		return this.cpm.selectProfessorClasses(profID)
+			.stream()
+			.filter(c->!(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
 	}
 
 	/**
@@ -230,13 +265,70 @@ public class Database
 		String fName,
 		String lName,
 		String bDate,
-		String dept) throws SQLException
+		String dept,
+		String cTeaching,
+		String cTaught) throws SQLException
 	{
 		this.connection.rollback();
-		final var old = this.prm.selectProfessor(id)
+		final Professor old = this.prm.selectProfessor(id)
 			.orElseThrow(()->new SQLException("Tried to update professor, but professor does not exist."));
+
+		// Yes, this is terrible. No, I don't care.
+		old.teachingClasses = this.getProfessorTeaching(id)
+			.stream()
+			.map(c->new Klass(c))
+			.toList();
+		for(var klass: old.teachingClasses)
+		{
+			final var classID = this.cm
+				.selectClassID(klass.department, klass.number, 0, 0, 0)
+				.getAsInt();
+			this.cpm.deleteClassProfessor(id, classID);
+		}
+		for(var klass: cTeaching.split(" "))
+		{
+			if(klass.isEmpty()) continue;
+			var k = new Klass(klass);
+			var classID = this.cm
+				.selectClassID(k.department, k.number, 0, 0, 0);
+			if (classID.isEmpty())
+			{
+				this.cm.insertClass(k.department, k.number, 0, 0, 0);
+				classID = this.cm
+					.selectClassID(k.department, k.number, 0, 0, 0);
+			}
+			this.cpm.insertClassProfessor(id, classID.getAsInt(), true);
+		}
+
+		old.taughtClasses = this.getProfessorTaught(id)
+			.stream()
+			.map(c->new Klass(c))
+			.toList();
+		for(var klass: old.taughtClasses)
+		{
+			final var classID = this.cm
+				.selectClassID(klass.department, klass.number, 0, 0, 0)
+				.getAsInt();
+			this.cpm.deleteClassProfessor(id, classID);
+		}
+		for(var klass: cTaught.split(" "))
+		{
+			if(klass.isEmpty()) continue;
+			var k = new Klass(klass);
+			var classID = this.cm
+				.selectClassID(k.department, k.number, 0, 0, 0);
+			if (classID.isEmpty())
+			{
+				this.cm.insertClass(k.department, k.number, 0, 0, 0);
+				classID = this.cm
+					.selectClassID(k.department, k.number, 0, 0, 0);
+			}
+			this.cpm.insertClassProfessor(id, classID.getAsInt(), false);
+		}
+
 		this.pm.updatePerson(id, fName, lName, bDate);
 		this.em.updateEmployee(id, dept);
+
 		this.connection.commit();
 		return old;
 	}
@@ -257,6 +349,24 @@ public class Database
 		this.pm.deletePerson(id);
 		this.connection.commit();
 		return old;
+	}
+
+	private List<String> getTATeaching(int TAID) throws SQLException
+	{
+		return this.ctm.selectTAClasses(TAID)
+			.stream()
+			.filter(c->(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
+	}
+
+	private List<String> getTATaught(int TAID) throws SQLException
+	{
+		return this.ctm.selectTAClasses(TAID)
+			.stream()
+			.filter(c->!(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
 	}
 
 	/**
@@ -290,7 +400,25 @@ public class Database
 	public TableModel listTAs() throws SQLException
 	{
 		this.connection.rollback();
-		return makeTableModel(this.tam.selectTAs());
+		final var tas = this.tam.selectTAs();
+		for(var ta: tas)
+		{
+			final var courses = this.ctm
+				.selectTAClasses((int)ta.get("TA ID"));
+			final var teaching = courses
+				.stream()
+				.filter(c->(boolean)c.get("Actively Teaching"))
+				.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+				.toList();
+			ta.put("Teaching", String.join(" ", teaching));
+			final var taught = courses
+			.stream()
+			.filter(c->!(boolean)c.get("Actively Teaching"))
+			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+			.toList();
+			ta.put("Taught", String.join(" ", taught));
+		}
+		return makeTableModel(tas);
 	}
 
 	/**
@@ -308,11 +436,67 @@ public class Database
 		String fName,
 		String lName,
 		String bDate,
-		String dept) throws SQLException
+		String dept,
+		String cTeaching,
+		String cTaught) throws SQLException
 	{
 		this.connection.rollback();
-		final var old = this.tam.selectTA(id)
+		final TA old = this.tam.selectTA(id)
 			.orElseThrow(()->new SQLException("Tried to update professor, but professor does not exist."));
+
+		// Yes, this is terrible. No, I don't care.
+		old.teachingClasses = this.getTATeaching(id)
+			.stream()
+			.map(c->new Klass(c))
+			.toList();
+		for(var klass: old.teachingClasses)
+		{
+			final var classID = this.cm
+				.selectClassID(klass.department, klass.number, 0, 0, 0)
+				.getAsInt();
+			this.ctm.deleteClassTA(id, classID);
+		}
+		for(var klass: cTeaching.split(" "))
+		{
+			if(klass.isEmpty()) continue;
+			var k = new Klass(klass);
+			var classID = this.cm
+				.selectClassID(k.department, k.number, 0, 0, 0);
+			if (classID.isEmpty())
+			{
+				this.cm.insertClass(k.department, k.number, 0, 0, 0);
+				classID = this.cm
+					.selectClassID(k.department, k.number, 0, 0, 0);
+			}
+			this.ctm.insertClassTA(id, classID.getAsInt(), true);
+		}
+
+		old.taughtClasses = this.getTATaught(id)
+			.stream()
+			.map(c->new Klass(c))
+			.toList();
+		for(var klass: old.taughtClasses)
+		{
+			final var classID = this.cm
+				.selectClassID(klass.department, klass.number, 0, 0, 0)
+				.getAsInt();
+			this.ctm.deleteClassTA(id, classID);
+		}
+		for(var klass: cTaught.split(" "))
+		{
+			if(klass.isEmpty()) continue;
+			var k = new Klass(klass);
+			var classID = this.cm
+				.selectClassID(k.department, k.number, 0, 0, 0);
+			if (classID.isEmpty())
+			{
+				this.cm.insertClass(k.department, k.number, 0, 0, 0);
+				classID = this.cm
+					.selectClassID(k.department, k.number, 0, 0, 0);
+			}
+			this.ctm.insertClassTA(id, classID.getAsInt(), false);
+		}
+
 		this.pm.updatePerson(id, fName, lName, bDate);
 		this.em.updateEmployee(id, dept);
 		this.connection.commit();
