@@ -155,9 +155,9 @@ public class AssignmentManager
 	}
 
 	public int updateAssignment(
-		int classID, 
-		int studentID, 
-		String assignment, 
+		int classID,
+		int studentID,
+		String assignment,
 		int grade) throws SQLException
 	{
 		this.updateAssignment.setInt(1, grade);
@@ -168,8 +168,8 @@ public class AssignmentManager
 	}
 
 	public int deleteAssignment(
-		int classID, 
-		int studentID, 
+		int classID,
+		int studentID,
 		String assignment) throws SQLException
 	{
 		this.deleteAssignment.setInt(1, classID);

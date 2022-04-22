@@ -18,7 +18,7 @@ public class ClassTAManager
 		this.selectClassTA = connection.prepareStatement("""
 			SELECT active
 				FROM CLASS_TA
-				WHERE 
+				WHERE
 					ta_id = ?
 					AND class_id = ?;""");
 		this.updateClassTA = connection.prepareStatement("""

@@ -18,7 +18,7 @@ public class ClassProfessorManager
 		this.selectClassProfessor = connection.prepareStatement("""
 			SELECT active
 				FROM CLASS_PROFESSOR
-				WHERE 
+				WHERE
 					professor_id = ?
 					AND class_id = ?;""");
 		this.updateClassProfessor = connection.prepareStatement("""
