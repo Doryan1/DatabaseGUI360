@@ -113,7 +113,15 @@ public class admin implements ActionListener {
 
 		JButton btnModifyProf = new JButton("Modify"); // This is the modify button for the Professor Manager
 		btnModifyProf.addActionListener(e->{
-			final int id = Integer.parseInt(this.txtIDProf.getText());
+			final int row = tableprof.getSelectedRow();
+			if (row == -1)
+			{
+				// No row selected
+				return;
+			}
+			final int id = (int)tableprof
+				.getModel()
+				.getValueAt(row, 1);
 			final String fName = this.txtFNProf.getText();
 			final String lName = this.txtLNProf.getText();
 			final String birthDate = this.txtDOBProf.getText();
@@ -122,7 +130,6 @@ public class admin implements ActionListener {
 			final String cTaught = this.txtCTaughtProf.getText();
 			try {
 				db.updateProfessor(id, fName, lName, birthDate, department, cTeaching, cTaught);
-				// TODO: how should class updates be handled?
 			} catch (SQLException ex) {
 				ex.printStackTrace();
 			}
@@ -133,7 +140,15 @@ public class admin implements ActionListener {
 
 		JButton btnDeleteProf = new JButton("Delete"); // This is the delete button for the Professor Manager
 		btnDeleteProf.addActionListener(e->{
-			final int id = Integer.parseInt(this.txtIDProf.getText());
+			final int row = tableprof.getSelectedRow();
+			if (row == -1)
+			{
+				// No row selected
+				return;
+			}
+			final int id = (int)tableprof
+				.getModel()
+				.getValueAt(row, 1);
 			try {
 				db.removeProfessor(id);
 			} catch (SQLException ex) {
@@ -263,73 +278,79 @@ public class admin implements ActionListener {
 
 		//TA Has not been updated yet. Only admin. This is on to do list
 		JButton btnAddTA = new JButton("ADD");
-		btnAddTA.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					String query = " insert into TA (id,department,fname,lname,dob,cassisting,cassisted) values (?,?,?,?,?,?,?) ";
-					pst = connection.prepareStatement(query); // pst is called at the top as a static
-					pst.setString(1, txtIDTA.getText());
-					pst.setString(2, txtDepartmentTA.getText());
-					pst.setString(3, txtFNTA.getText());
-					pst.setString(4, txtLNTA.getText());
-					pst.setString(5, txtDOBTA.getText());
-					pst.setString(6, txtCAssistingTA.getText());
-					pst.setString(7, txtCAssistedTA.getText());
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input saved");
-					UpdateTA();
-					pst.close();
-				} catch (Exception e1) {
-					JOptionPane.showMessageDialog(null, " ID must be unique,  Try Again Please ");
-					JOptionPane.showMessageDialog(null, e1);
-				}
+		btnAddTA.addActionListener(e->{
+			final int id = Integer.parseInt(this.txtIDTA.getText());
+			final String fName = this.txtFNTA.getText();
+			final String lName = this.txtLNTA.getText();
+			final String birthDate = this.txtDOBTA.getText();
+			final String department = this.txtDepartmentTA.getText();
+			final String cAssisting = this.txtCAssistingTA.getText();
+			final String cAssisted = this.txtCAssistedTA.getText();
+			try {
+				db.addTA(
+					id,
+					fName,
+					lName,
+					birthDate,
+					department,
+					cAssisting,
+					cAssisted);
+				JOptionPane.showMessageDialog(null, "input saved");
+			} catch (Exception e1) {
+				JOptionPane.showMessageDialog(null, " ID must be unique,  Try Again Please ");
+				JOptionPane.showMessageDialog(null, e1);
 			}
+			UpdateTA();
 		});
 		btnAddTA.setBounds(515, 289, 89, 23);
 		adminprofpanel_1.add(btnAddTA);
 
 		JButton btnModifyTA = new JButton("Modify");
-		btnModifyTA.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					String value1 = txtIDTA.getText();
-					String value2 = txtDepartmentTA.getText();
-					String value3 = txtFNTA.getText();
-					String value4 = txtLNTA.getText();
-					String value5 = txtDOBTA.getText();
-					String value6 = txtCAssistingTA.getText();
-					String value7 = txtCAssistedTA.getText();
-					String query = "update TA set id='" + value1 + "',department='" + value2 + "',fname = '" + value3
-							+ "',lname='" + value4 + "',dob= '" + value5 + "',cassisting='" + value6 + "',cassisted='"
-							+ value7 + "' where id='" + value1 + "' ";
-					pst = connection.prepareStatement(query);
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input modified");
-					pst.close();
-					UpdateTA();
-				} catch (Exception e5) {
-					e5.printStackTrace();
-				}
+		btnModifyTA.addActionListener(e-> {
+			final int row = tableTA.getSelectedRow();
+			if (row == -1)
+			{
+				// No row selected
+				return;
 			}
+			final int id = (int)tableTA
+				.getModel()
+				.getValueAt(row, 1);
+			final String fName = this.txtFNTA.getText();
+			final String lName = this.txtLNTA.getText();
+			final String birthDate = this.txtDOBTA.getText();
+			final String department = this.txtDepartmentTA.getText();
+			final String cAssisting = this.txtCAssistingTA.getText();
+			final String cAssisted = this.txtCAssistedTA.getText();
+			try {
+				db.updateTA(id, fName, lName, birthDate, department, cAssisting, cAssisted);
+				JOptionPane.showMessageDialog(null, "input modified");
+			} catch (Exception e5) {
+				e5.printStackTrace();
+			}
+			UpdateTA();
 		});
 		btnModifyTA.setBounds(614, 289, 89, 23);
 		adminprofpanel_1.add(btnModifyTA);
 
 		JButton btnDeleteTA = new JButton("Delete");
-		btnDeleteTA.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int row = tableTA.getSelectedRow();
-				String cell = tableTA.getModel().getValueAt(row, 0).toString();
-				String query = "DELETE FROM TA where id= " + cell;
-				try {
-					PreparedStatement pst = connection.prepareStatement(query);
-					pst.execute();
-					JOptionPane.showMessageDialog(null, "input deleted");
-					UpdateTA();
-				} catch (Exception e4) {
-					e4.printStackTrace();
-				}
+		btnDeleteTA.addActionListener(e->{
+			final int row = tableTA.getSelectedRow();
+			if (row == -1)
+			{
+				// No row selected
+				return;
 			}
+			final int id = (int)tableTA
+				.getModel()
+				.getValueAt(row, 0);
+			try {
+				db.removeTA(id);
+				JOptionPane.showMessageDialog(null, "input deleted");
+			} catch (Exception e4) {
+				e4.printStackTrace();
+			}
+			UpdateTA();
 		});
 		btnDeleteTA.setBounds(713, 289, 89, 23);
 		adminprofpanel_1.add(btnDeleteTA);

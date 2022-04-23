@@ -65,7 +65,7 @@ public class TAManager
 			while (res.next())
 			{
 				final var ta = new HashMap<String, Object>();
-				ta.put("Professor ID", res.getInt("id"));
+				ta.put("TA ID", res.getInt("id"));
 				ta.put("First Name", res.getString("first_name"));
 				ta.put("Last Name", res.getString("last_name"));
 				ta.put("Birth Date", res.getString("birth_date"));

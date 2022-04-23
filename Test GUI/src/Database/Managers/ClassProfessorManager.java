@@ -9,6 +9,7 @@ public class ClassProfessorManager
 	private final PreparedStatement updateClassProfessor;
 	private final PreparedStatement deleteClassProfessor;
 	private final PreparedStatement selectProfessorClasses;
+	private final PreparedStatement selectClassProfessors;
 
 	public ClassProfessorManager(Connection connection) throws SQLException
 	{
@@ -40,6 +41,11 @@ public class ClassProfessorManager
 						ON CLASS_PROFESSOR.class_id = CLASS.id
 				WHERE
 					professor_id = ?;""");
+		this.selectClassProfessors = connection.prepareStatement("""
+			SELECT professor_id
+				FROM CLASS_PROFESSOR
+				WHERE
+					class_id = ?;""");
 	}
 
 	public int insertClassProfessor(
@@ -103,5 +109,19 @@ public class ClassProfessorManager
 			}
 		}
 		return classes;
+	}
+
+	public List<Integer> selectClassProfessors(int classID) throws SQLException
+	{
+		this.selectClassProfessors.setInt(1, classID);
+		var tas = new ArrayList<Integer>();
+		try (var res = this.selectClassProfessors.executeQuery())
+		{
+			while (res.next())
+			{
+				tas.add(res.getInt("professor_id"));
+			}
+		}
+		return tas;
 	}
 }

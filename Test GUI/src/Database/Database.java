@@ -264,6 +264,7 @@ public class Database
 							0,
 							0);
 					} catch (SQLException e) {
+						e.printStackTrace();
 						return OptionalInt.empty();}})
 				.flatMapToInt(OptionalInt::stream)
 				// get TAs for class
@@ -271,6 +272,7 @@ public class Database
 					try {
 						return this.ctm.selectClassTAs(c);
 					} catch (SQLException e) {
+						e.printStackTrace();
 						return new ArrayList<Integer>();
 					}})
 				.flatMap(t->t.stream())
@@ -443,12 +445,32 @@ public class Database
 		String fName,
 		String lName,
 		String bDate,
-		String dept) throws SQLException
+		String dept,
+		String assisting,
+		String assisted) throws SQLException
 	{
 		this.connection.rollback();
 		this.pm.insertPerson(id, fName, lName, bDate);
 		this.em.insertEmployee(id, dept);
 		this.tam.insertTA(id);
+		for(String c: assisting.split("\\s"))
+		{
+			String[] s = c.split("-");
+			if(s.length < 2) continue;
+			String classDept = s[0];
+			int course = Integer.parseInt(s[1]);
+			final var classID = this.cm.selectOrInsertClassID(classDept, course, 0, 0, 0);
+			this.ctm.insertClassTA(id, classID, true);
+		}
+		for(String c: assisted.split("\\s"))
+		{
+			String[] s = c.split("-");
+			if(s.length < 2) continue;
+			String classDept = s[0];
+			int course = Integer.parseInt(s[1]);
+			final var classID = this.cm.selectOrInsertClassID(classDept, course, 0, 0, 0);
+			this.ctm.insertClassTA(id, classID, false);
+		}
 		this.connection.commit();
 	}
 
@@ -477,6 +499,35 @@ public class Database
 			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
 			.toList();
 			ta.put("Taught", String.join(" ", taught));
+
+			final var professors = courses
+				.stream()
+				.filter(c->(boolean)c.get("Actively Teaching"))
+				// Get class IDs
+				.map(c->{
+					try{
+						return this.cm.selectClassID(
+							(String)c.get("Department"),
+							(int)c.get("Course Number"),
+							0,
+							0,
+							0);
+					} catch (SQLException e) {
+						e.printStackTrace();
+						return OptionalInt.empty();}})
+				.flatMapToInt(OptionalInt::stream)
+				// get Professors for class
+				.mapToObj(c->{
+					try {
+						return this.cpm.selectClassProfessors(c);
+					} catch (SQLException e) {
+						e.printStackTrace();
+						return new ArrayList<Integer>();
+					}})
+				.flatMap(t->t.stream())
+				.map(t->String.valueOf(t))
+				.collect(Collectors.joining(" "));
+			ta.put("Professors", professors);
 		}
 		return makeTableModel(tas);
 	}
