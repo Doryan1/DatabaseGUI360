@@ -9,6 +9,7 @@ public class ClassTAManager
 	private final PreparedStatement updateClassTA;
 	private final PreparedStatement deleteClassTA;
 	private final PreparedStatement selectTAClasses;
+	private final PreparedStatement selectClassTAs;
 
 	public ClassTAManager(Connection connection) throws SQLException
 	{
@@ -40,6 +41,11 @@ public class ClassTAManager
 						ON CLASS_TA.class_id = CLASS.id
 				WHERE
 					ta_id = ?;""");
+		this.selectClassTAs = connection.prepareStatement("""
+			SELECT ta_id
+				FROM CLASS_TA
+				WHERE
+					class_id = ?;""");
 	}
 
 	public int insertClassTA(
@@ -103,5 +109,19 @@ public class ClassTAManager
 			}
 		}
 		return classes;
+	}
+
+	public List<Integer> selectClassTAs(int classID) throws SQLException
+	{
+		this.selectClassTAs.setInt(1, classID);
+		var tas = new ArrayList<Integer>();
+		try (var res = this.selectTAClasses.executeQuery())
+		{
+			while (res.next())
+			{
+				tas.add(res.getInt("ta_id"));
+			}
+		}
+		return tas;
 	}
 }

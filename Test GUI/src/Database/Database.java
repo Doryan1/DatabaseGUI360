@@ -1,6 +1,7 @@
 package Database;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.swing.table.*;
 
 import Database.Managers.AdminManager;
@@ -242,12 +243,40 @@ public class Database
 				.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
 				.toList();
 			professor.put("Teaching", String.join(" ", teaching));
+
 			final var taught = courses
-			.stream()
-			.filter(c->!(boolean)c.get("Actively Teaching"))
-			.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
-			.toList();
+				.stream()
+				.filter(c->!(boolean)c.get("Actively Teaching"))
+				.map(c->(String)c.get("Department")+"-"+(int)c.get("Course Number"))
+				.toList();
 			professor.put("Taught", String.join(" ", taught));
+
+			final var tas = courses
+				.stream()
+				.filter(c->(boolean)c.get("Actively Teaching"))
+				// Get class IDs
+				.map(c->{
+					try{
+						return this.cm.selectClassID(
+							(String)c.get("Department"),
+							(int)c.get("Course Number"),
+							0,
+							0,
+							0);
+					} catch (SQLException e) {
+						return OptionalInt.empty();}})
+				.flatMapToInt(OptionalInt::stream)
+				// get TAs for class
+				.mapToObj(c->{
+					try {
+						return this.ctm.selectClassTAs(c);
+					} catch (SQLException e) {
+						return new ArrayList<Integer>();
+					}})
+				.flatMap(t->t.stream())
+				.map(t->String.valueOf(t))
+				.collect(Collectors.joining(" "));
+			professor.put("Teacher Assistants", tas);
 		}
 		return makeTableModel(professors);
 	}
