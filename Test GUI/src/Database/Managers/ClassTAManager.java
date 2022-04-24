@@ -35,7 +35,7 @@ public class ClassTAManager
 					ta_id = ?
 					AND class_id = ?;""");
 		this.selectTAClasses = connection.prepareStatement("""
-			SELECT department, number, section, semester, year
+			SELECT active, department, number, section, semester, year
 				FROM CLASS_TA
 					INNER JOIN CLASS
 						ON CLASS_TA.class_id = CLASS.id
@@ -115,7 +115,7 @@ public class ClassTAManager
 	{
 		this.selectClassTAs.setInt(1, classID);
 		var tas = new ArrayList<Integer>();
-		try (var res = this.selectTAClasses.executeQuery())
+		try (var res = this.selectClassTAs.executeQuery())
 		{
 			while (res.next())
 			{
